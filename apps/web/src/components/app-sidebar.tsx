@@ -4,24 +4,23 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Sparkles } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/user-menu";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuAction,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -44,16 +43,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   });
 
   return (
-    <Sidebar {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-2"
-          onClick={() => router.push("/chat")}
-        >
-          <Plus className="size-4" />
-          New chat
-        </Button>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" render={<Link href="/chat" />}>
+              <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                <Sparkles className="size-4" />
+              </div>
+              <span className="text-base font-semibold">Peaqo</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="New chat"
+              onClick={() => router.push("/chat")}
+            >
+              <Plus />
+              <span>New chat</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
@@ -65,6 +77,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuItem key={String(c._id)}>
                   <SidebarMenuButton
                     isActive={String(c._id) === activeId}
+                    tooltip={c.title || "New chat"}
                     render={<Link href={`/chat/${c._id}`} />}
                   >
                     <MessageSquare />
