@@ -3,12 +3,12 @@ import { router, adminProcedure } from "../trpc";
 import {
   connectDB,
   ConversationModel,
-  GatewayModel,
   ModelCfg,
   UserModel,
   Provider,
 } from "@repo/db";
-import { listGatewayModels, gatewayKeyAvailable } from "../llm/list-models";
+import { listGatewayModels } from "../llm/list-models";
+import { gateways as gatewayConfigs, getGateway, gatewayKey } from "../config";
 
 // platform-wide counts for the admin dashboard
 const stats = adminProcedure.query(async () => {
@@ -71,24 +71,15 @@ const users = router({
 });
 
 const gateways = router({
-  create: adminProcedure
-    .input(z.object({ name: z.string().min(1), url: z.string().url() }))
-    .mutation(async ({ input }) => {
-      await connectDB();
-      const g = await GatewayModel.create(input);
-      return { id: g.id };
-    }),
-  list: adminProcedure.query(async () => {
-    await connectDB();
-    return GatewayModel.find().lean();
-  }),
-  delete: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input }) => {
-      await connectDB();
-      await GatewayModel.findByIdAndDelete(input.id);
-      return { ok: true };
-    }),
+  // gateways are hardcoded in config.ts; key presence comes from env
+  list: adminProcedure.query(() =>
+    gatewayConfigs.map((g) => ({
+      _id: g.id,
+      name: g.name,
+      url: g.url,
+      hasKey: !!gatewayKey(g),
+    })),
+  ),
 });
 
 const modelInput = z.object({
@@ -132,16 +123,36 @@ const models = router({
       await ModelCfg.findByIdAndUpdate(input.id, { enabled: input.enabled });
       return { ok: true };
     }),
-  // is the gateway list key configured in env? gates the import UI
-  envStatus: adminProcedure.query(() => ({ gatewayKey: gatewayKeyAvailable() })),
-  // list models from a gateway (env key); provider derived per model
+  // list models from a gateway (key from env); provider derived per model
   listFromGateway: adminProcedure
     .input(z.object({ gatewayId: z.string() }))
     .query(async ({ input }) => {
-      await connectDB();
-      const gw = await GatewayModel.findById(input.gatewayId).lean();
+      const gw = getGateway(input.gatewayId);
       if (!gw) throw new Error("Gateway not found");
-      return listGatewayModels((gw as unknown as { url: string }).url);
+      return listGatewayModels(gw.url, gatewayKey(gw));
+    }),
+  // import every model a gateway exposes, stored disabled — admin enables later
+  importFromGateway: adminProcedure
+    .input(z.object({ gatewayId: z.string() }))
+    .mutation(async ({ input }) => {
+      await connectDB();
+      const gw = getGateway(input.gatewayId);
+      if (!gw) throw new Error("Gateway not found");
+      const list = await listGatewayModels(gw.url, gatewayKey(gw));
+      if (!list.length) return { imported: 0 };
+      // upsert: new rows land disabled; existing rows keep their enabled state
+      const ops = list.map((m) => ({
+        updateOne: {
+          filter: { modelId: m.modelId },
+          update: {
+            $set: { provider: m.provider, gatewayId: input.gatewayId },
+            $setOnInsert: { displayName: m.modelId, enabled: false },
+          },
+          upsert: true,
+        },
+      }));
+      const res = await ModelCfg.bulkWrite(ops);
+      return { imported: res.upsertedCount };
     }),
   listConfigured: adminProcedure.query(async () => {
     await connectDB();

@@ -12,7 +12,8 @@ import {
   TITLE_MODEL,
 } from "@repo/trpc/llm/resolve";
 import { getAuth, getSession } from "@repo/auth";
-import { connectDB, UserModel, ConversationModel, ModelCfg, GatewayModel } from "@repo/db";
+import { connectDB, UserModel, ConversationModel, ModelCfg } from "@repo/db";
+import { getGateway } from "@repo/trpc/config";
 
 const app = new Hono().basePath("/api");
 
@@ -45,7 +46,7 @@ app.post("/chat", async (c) => {
 
   const cfg = await ModelCfg.findOne({ modelId, enabled: true });
   if (!cfg) return c.json({ error: "Model not available" }, 400);
-  const gateway = await GatewayModel.findById(cfg.gatewayId);
+  const gateway = getGateway(cfg.gatewayId);
   if (!gateway) return c.json({ error: "Gateway not configured" }, 400);
 
   const model = resolveModel({

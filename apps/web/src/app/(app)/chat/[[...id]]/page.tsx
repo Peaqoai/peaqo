@@ -7,46 +7,47 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { toast } from "sonner";
 import { useRequireAuth } from "@/lib/use-require-auth";
 import { trpc } from "@/lib/trpc/client";
+import { config } from "@repo/trpc/config";
 import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
+    Conversation,
+    ConversationContent,
+    ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import {
-  Message,
-  MessageContent,
-  MessageResponse,
+    Message,
+    MessageContent,
+    MessageResponse,
 } from "@/components/ai-elements/message";
 import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
+    Reasoning,
+    ReasoningContent,
+    ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
 import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
+    Tool,
+    ToolContent,
+    ToolHeader,
+    ToolInput,
+    ToolOutput,
 } from "@/components/ai-elements/tool";
 import {
-  Attachment,
-  AttachmentPreview,
-  AttachmentRemove,
-  Attachments,
+    Attachment,
+    AttachmentPreview,
+    AttachmentRemove,
+    Attachments,
 } from "@/components/ai-elements/attachments";
 import { PaperclipIcon, GlobeIcon } from "lucide-react";
 import {
-  PromptInput,
-  PromptInputBody,
-  PromptInputButton,
-  PromptInputFooter,
-  PromptInputHeader,
-  type PromptInputMessage,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputTools,
-  usePromptInputAttachments,
+    PromptInput,
+    PromptInputBody,
+    PromptInputButton,
+    PromptInputFooter,
+    PromptInputHeader,
+    type PromptInputMessage,
+    PromptInputSubmit,
+    PromptInputTextarea,
+    PromptInputTools,
+    usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 import { ChatModelSelector } from "@/components/chat-model-selector";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -105,7 +106,7 @@ export default function ChatPage() {
     <Thread
       key={id ?? "new"}
       initialId={id}
-      initialModelId={data?.modelId ?? "gpt-4o"}
+      initialModelId={data?.modelId ?? config.defaultModelId}
       initialMessages={initialMessages}
     />
   );
@@ -136,7 +137,7 @@ function Thread({
           name: m.displayName,
           provider: m.provider,
         }))
-      : [{ id: "gpt-4o", name: "GPT-4o", provider: "openai" }];
+      : [config.fallbackModel];
 
   const { messages, sendMessage, status } = useChat({
     messages: initialMessages,

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
-import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/data-table";
@@ -11,34 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
-type Gateway = { _id: string; name: string; url: string };
+type Gateway = { _id: string; name: string; url: string; hasKey: boolean };
 
 export default function AdminGatewaysPage() {
-  const utils = trpc.useUtils();
   const gateways = trpc.admin.gateways.list.useQuery();
   const all = (gateways.data ?? []) as unknown as Gateway[];
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
-  });
-  const [addOpen, setAddOpen] = useState(false);
-
-  const deleteGateway = trpc.admin.gateways.delete.useMutation({
-    onSuccess: () => {
-      utils.admin.gateways.list.invalidate();
-      toast.success("Gateway deleted");
-    },
-    onError: (e) => toast.error(e.message),
   });
 
   const columns = useMemo<ColumnDef<Gateway, unknown>[]>(
@@ -52,22 +33,16 @@ export default function AdminGatewaysPage() {
         ),
       },
       {
-        id: "actions",
-        header: "",
+        id: "key",
+        header: "Key",
         cell: ({ row }) => (
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => deleteGateway.mutate({ id: row.original._id })}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
+          <Badge variant={row.original.hasKey ? "secondary" : "outline"}>
+            {row.original.hasKey ? "Set" : "None"}
+          </Badge>
         ),
       },
     ],
-    [deleteGateway],
+    [],
   );
 
   const page = all.slice(
@@ -80,7 +55,8 @@ export default function AdminGatewaysPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Gateways</h1>
         <p className="text-muted-foreground text-sm">
-          Manage AI gateways and import their models.
+          Gateways are configured in code; their API keys come from env. Import
+          their models below.
         </p>
       </div>
 
@@ -91,79 +67,10 @@ export default function AdminGatewaysPage() {
         pagination={pagination}
         onPaginationChange={setPagination}
         isLoading={gateways.isLoading}
-        toolbar={
-          <div className="flex justify-end">
-            <Button size="sm" onClick={() => setAddOpen(true)}>
-              <Plus className="size-4" /> Add Gateway
-            </Button>
-          </div>
-        }
       />
 
       <ImportCard gateways={all} />
-
-      <AddGatewayDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
-  );
-}
-
-function AddGatewayDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-}) {
-  const utils = trpc.useUtils();
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
-  const create = trpc.admin.gateways.create.useMutation({
-    onSuccess: () => {
-      utils.admin.gateways.list.invalidate();
-      toast.success("Gateway added");
-      setName("");
-      setUrl("");
-      onOpenChange(false);
-    },
-    onError: (e) => toast.error(e.message),
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add Gateway</DialogTitle>
-          <DialogDescription>
-            An OpenAI-compatible gateway base URL.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-3 py-2">
-          <div className="grid gap-1.5">
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label>URL</Label>
-            <Input
-              placeholder="https://gateway.ai.cloudflare.com/..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            disabled={!name || !url || create.isPending}
-            onClick={() => create.mutate({ name, url })}
-          >
-            {create.isPending ? "Adding…" : "Add"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -174,7 +81,6 @@ function ImportCard({ gateways }: { gateways: Gateway[] }) {
   const [gatewayId, setGatewayId] = useState("");
   const [search, setSearch] = useState("");
 
-  const envStatus = trpc.admin.models.envStatus.useQuery();
   const models = trpc.admin.models.listFromGateway.useQuery(
     { gatewayId },
     { enabled: !!gatewayId, retry: false },
@@ -183,6 +89,13 @@ function ImportCard({ gateways }: { gateways: Gateway[] }) {
     onSuccess: () => {
       utils.admin.models.listPaginated.invalidate();
       toast.success("Model enabled");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const importAll = trpc.admin.models.importFromGateway.useMutation({
+    onSuccess: (r) => {
+      utils.admin.models.listPaginated.invalidate();
+      toast.success(`Imported ${r.imported} new model(s) — disabled`);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -197,11 +110,6 @@ function ImportCard({ gateways }: { gateways: Gateway[] }) {
         <CardTitle>Import models from a gateway</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {envStatus.data && !envStatus.data.gatewayKey && (
-          <p className="text-muted-foreground text-sm">
-            Set GATEWAY_API_KEY in env to list models from a gateway.
-          </p>
-        )}
         <div className="flex flex-wrap items-end gap-2">
           <div className="grid gap-1">
             <Label className="text-xs">Gateway</Label>
@@ -227,6 +135,13 @@ function ImportCard({ gateways }: { gateways: Gateway[] }) {
               disabled={!models.data}
             />
           </div>
+          <Button
+            variant="secondary"
+            disabled={!gatewayId || importAll.isPending}
+            onClick={() => importAll.mutate({ gatewayId })}
+          >
+            {importAll.isPending ? "Importing…" : "Import all"}
+          </Button>
         </div>
 
         {models.isFetching && (

@@ -53,12 +53,9 @@ export function ModelFormDialog({
   const set = <K extends keyof ModelDraft>(k: K, v: ModelDraft[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  // model picker: list comes from the selected gateway (env key), provider derived
+  // model picker: list comes from the selected gateway (its stored key), provider derived
   const [pickerOpen, setPickerOpen] = useState(false);
-  const envStatus = trpc.admin.models.envStatus.useQuery(undefined, {
-    enabled: open,
-  });
-  const canImport = !!envStatus.data?.gatewayKey && !!form.gatewayId;
+  const canImport = !!form.gatewayId;
 
   const onDone = () => {
     utils.admin.models.listPaginated.invalidate();
@@ -128,23 +125,16 @@ export function ModelFormDialog({
                   if (!form.displayName) set("displayName", v);
                 }}
               />
-              {envStatus.data?.gatewayKey && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!canImport}
-                  onClick={() => setPickerOpen(true)}
-                >
-                  Select model
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!canImport}
+                onClick={() => setPickerOpen(true)}
+              >
+                Select model
+              </Button>
             </div>
-            {envStatus.data && !envStatus.data.gatewayKey && (
-              <p className="text-muted-foreground text-xs">
-                Set GATEWAY_API_KEY in env to browse models from a gateway.
-              </p>
-            )}
-            {envStatus.data?.gatewayKey && !form.gatewayId && (
+            {!form.gatewayId && (
               <p className="text-muted-foreground text-xs">
                 Pick a gateway above to browse its models.
               </p>

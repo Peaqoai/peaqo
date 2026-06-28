@@ -29,10 +29,10 @@ describe("admin.gateways", () => {
     await expect(caller.admin.gateways.list()).rejects.toThrow();
   });
 
-  it("admin can create + list a gateway", async () => {
+  it("admin lists the hardcoded gateways", async () => {
     const caller = appRouter.createCaller({ userId: adminId });
-    await caller.admin.gateways.create({ name: "cf", url: "https://gw.test" });
     const list = await caller.admin.gateways.list();
-    expect(list.length).toBe(1);
+    expect(list.length).toBeGreaterThan(0);
+    expect(list[0]).toHaveProperty("url");
   });
 });

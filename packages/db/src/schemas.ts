@@ -43,11 +43,6 @@ export const ConversationSchema = z.object({
   messages: z.array(MessageSchema).default([]),
 });
 
-export const GatewaySchema = z.object({
-  name: z.string().min(1),
-  url: z.string().url(),
-});
-
 export const ModelSchema = z.object({
   provider: Provider,
   gatewayId: z.string(),

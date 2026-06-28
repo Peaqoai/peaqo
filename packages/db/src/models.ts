@@ -46,19 +46,11 @@ const Conversation = new Schema(
   { timestamps: true },
 );
 
-const Gateway = new Schema(
-  {
-    name: { type: String, required: true },
-    url: { type: String, required: true },
-  },
-  { timestamps: true },
-);
-
 const ModelCfgSchema = new Schema(
   {
     provider: { type: String, required: true },
-    // optional: a model can be created standalone; set a gateway to make it chat-usable
-    gatewayId: { type: Schema.Types.ObjectId, ref: "Gateway" },
+    // gateway id from config.ts (e.g. "openai"); set to make the model chat-usable
+    gatewayId: { type: String },
     modelId: { type: String, required: true },
     displayName: { type: String, required: true },
     description: String,
@@ -78,7 +70,5 @@ export const OrgModel = (models.Organisation ??
   model("Organisation", Organisation)) as Model<any>;
 export const ConversationModel = (models.Conversation ??
   model("Conversation", Conversation)) as Model<any>;
-export const GatewayModel = (models.Gateway ??
-  model("Gateway", Gateway)) as Model<any>;
 export const ModelCfg = (models.Model ??
   model("Model", ModelCfgSchema)) as Model<any>;

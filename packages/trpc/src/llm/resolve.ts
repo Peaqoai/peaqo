@@ -3,9 +3,10 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { config } from "../config";
 
-// model used to auto-generate conversation titles
-export const TITLE_MODEL = "gpt-4o-mini";
+// model used to auto-generate conversation titles (see config.ts)
+export const TITLE_MODEL = config.titleModel;
 
 export function creditsFor(tokensUsed: number, multiplier: number): number {
   return Math.ceil((tokensUsed / 1000) * multiplier);

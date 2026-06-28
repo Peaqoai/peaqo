@@ -24,16 +24,14 @@ export function deriveProvider(id: string, ownedBy = ""): string {
   return "openrouter"; // aggregator fallback
 }
 
-export function gatewayKeyAvailable(): boolean {
-  return !!process.env.GATEWAY_API_KEY;
-}
-
-// List models straight from the gateway (OpenAI-compatible {url}/models), using
-// the env GATEWAY_API_KEY — never a typed key. provider is derived per model.
+// List models straight from the gateway (OpenAI-compatible {url}/models) using
+// that gateway's stored key (env GATEWAY_API_KEY as a fallback). provider is
+// derived per model.
 export async function listGatewayModels(
   gatewayUrl: string,
+  apiKey?: string,
 ): Promise<{ modelId: string; provider: string }[]> {
-  const key = process.env.GATEWAY_API_KEY;
+  const key = apiKey || process.env.GATEWAY_API_KEY;
   const base = gatewayUrl.replace(/\/+$/, "");
   const res = await fetch(`${base}/models`, {
     headers: key ? { Authorization: `Bearer ${key}` } : {},
