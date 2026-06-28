@@ -127,3 +127,19 @@
     @apply font-sans;
     }
 }
+
+/* light-blue gradient backdrop (auth + app shell), tuned per theme */
+.app-bg {
+  background: linear-gradient(
+    to bottom,
+    oklch(0.97 0.025 250),
+    var(--background) 60%
+  );
+}
+.dark .app-bg {
+  background: linear-gradient(
+    to bottom,
+    oklch(0.22 0.03 265),
+    var(--background) 60%
+  );
+}

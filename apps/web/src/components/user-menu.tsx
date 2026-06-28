@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Shield, User as UserIcon, Upload, Moon, Sun } from "lucide-react";
+import {
+  LogOut,
+  Shield,
+  User as UserIcon,
+  Upload,
+  Moon,
+  Sun,
+  Paintbrush,
+  CreditCard,
+} from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -21,9 +30,18 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
 
 const MAX_AVATAR_BYTES = 512 * 1024; // ~512KB before base64 inflation
 
@@ -74,9 +92,8 @@ export function UserMenu() {
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setAccountOpen(true)}>
-            <UserIcon className="size-4" /> Account
+            <UserIcon className="size-4" /> Settings
           </DropdownMenuItem>
-          <ThemeToggleItem />
           {u?.role === "admin" && (
             <DropdownMenuItem onClick={() => router.push("/admin/models")}>
               <Shield className="size-4" /> Admin
@@ -93,34 +110,73 @@ export function UserMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AccountDialog open={accountOpen} onOpenChange={setAccountOpen} />
+      <SettingsDialog open={accountOpen} onOpenChange={setAccountOpen} />
     </>
   );
 }
 
-function ThemeToggleItem() {
-  const { theme, setTheme } = useTheme();
-  const dark = theme === "dark";
-  return (
-    <DropdownMenuItem
-      onClick={(e) => {
-        e.preventDefault();
-        setTheme(dark ? "light" : "dark");
-      }}
-    >
-      {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-      {dark ? "Light mode" : "Dark mode"}
-    </DropdownMenuItem>
-  );
-}
+const SECTIONS = [
+  { id: "account", name: "Account", icon: UserIcon },
+  { id: "appearance", name: "Appearance", icon: Paintbrush },
+  { id: "billing", name: "Billing", icon: CreditCard },
+] as const;
+type SectionId = (typeof SECTIONS)[number]["id"];
 
-function AccountDialog({
+function SettingsDialog({
   open,
   onOpenChange,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
+  const [section, setSection] = useState<SectionId>("account");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">
+        <DialogTitle className="sr-only">Settings</DialogTitle>
+        <DialogDescription className="sr-only">
+          Manage your profile, appearance and billing.
+        </DialogDescription>
+        <SidebarProvider className="items-start">
+          <Sidebar collapsible="none" className="hidden md:flex">
+            <SidebarContent>
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {SECTIONS.map((item) => (
+                      <SidebarMenuItem key={item.id}>
+                        <SidebarMenuButton
+                          isActive={item.id === section}
+                          onClick={() => setSection(item.id)}
+                        >
+                          <item.icon />
+                          <span>{item.name}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+          </Sidebar>
+          <main className="flex h-[480px] flex-1 flex-col overflow-y-auto">
+            <header className="flex h-16 shrink-0 items-center px-6">
+              <h2 className="text-lg font-semibold capitalize">{section}</h2>
+            </header>
+            <div className="flex-1 px-6 pb-6">
+              {section === "account" && <AccountSection />}
+              {section === "appearance" && <AppearanceSection />}
+              {section === "billing" && <BillingSection />}
+            </div>
+          </main>
+        </SidebarProvider>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AccountSection() {
   const fileRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
   const me = trpc.user.getMe.useQuery();
@@ -145,57 +201,78 @@ function AccountDialog({
   }
 
   const u = me.data;
-  const used = u?.creditsUsed ?? 0;
-  const limit = u?.creditsLimit ?? 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Account</DialogTitle>
-          <DialogDescription>Manage your profile and credits.</DialogDescription>
-        </DialogHeader>
-        <div className="flex items-center gap-4">
-          <Avatar className="size-16">
-            {u?.avatarUrl && <AvatarImage src={u.avatarUrl} alt={u.name} />}
-            <AvatarFallback>{(u?.name ?? "?").slice(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">{u?.name}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2 gap-2"
-              disabled={setAvatar.isPending}
-              onClick={() => fileRef.current?.click()}
-            >
-              <Upload className="size-4" />
-              {setAvatar.isPending ? "Uploading…" : "Change avatar"}
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={onPick}
-            />
-          </div>
-        </div>
-        <div className="bg-muted rounded-md p-3 text-sm">
-          <div className="flex justify-between">
-            <span className="capitalize">{u?.plan} plan</span>
-            <span className="text-muted-foreground">
-              {used} / {limit} credits used
-            </span>
-          </div>
-          <div className="bg-background mt-2 h-2 overflow-hidden rounded-full">
-            <div
-              className="bg-primary h-full"
-              style={{ width: `${limit ? Math.min((used / limit) * 100, 100) : 0}%` }}
-            />
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <div className="flex items-center gap-4">
+      <Avatar className="size-16">
+        {u?.avatarUrl && <AvatarImage src={u.avatarUrl} alt={u.name} />}
+        <AvatarFallback>{(u?.name ?? "?").slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
+      <div>
+        <p className="font-medium">{u?.name}</p>
+        <p className="text-muted-foreground text-sm">{u?.email}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-2 gap-2"
+          disabled={setAvatar.isPending}
+          onClick={() => fileRef.current?.click()}
+        >
+          <Upload className="size-4" />
+          {setAvatar.isPending ? "Uploading…" : "Change avatar"}
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onPick}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AppearanceSection() {
+  const { theme, setTheme } = useTheme();
+  const dark = theme === "dark";
+  return (
+    <div className="flex items-center justify-between rounded-md border p-4">
+      <div>
+        <p className="font-medium">Theme</p>
+        <p className="text-muted-foreground text-sm">
+          Currently using {dark ? "dark" : "light"} mode.
+        </p>
+      </div>
+      <Button
+        variant="outline"
+        className="gap-2"
+        onClick={() => setTheme(dark ? "light" : "dark")}
+      >
+        {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+        {dark ? "Switch to light" : "Switch to dark"}
+      </Button>
+    </div>
+  );
+}
+
+function BillingSection() {
+  const me = trpc.user.getMe.useQuery();
+  const u = me.data;
+  const used = u?.creditsUsed ?? 0;
+  const limit = u?.creditsLimit ?? 0;
+  const pct = limit ? Math.min((used / limit) * 100, 100) : 0;
+  return (
+    <div className="bg-muted rounded-md p-4 text-sm">
+      <div className="flex justify-between">
+        <span className="capitalize">{u?.plan} plan</span>
+        <span className="text-muted-foreground">
+          {used} / {limit} credits used
+        </span>
+      </div>
+      <div className="bg-background mt-2 h-2 overflow-hidden rounded-full">
+        <div className="bg-primary h-full" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
   );
 }

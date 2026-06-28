@@ -1,15 +1,25 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthGateModal } from "@/components/auth-gate-modal";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider>
-      <div className="bg-background text-foreground flex h-screen overflow-hidden">
+      <SidebarProvider>
         <AppSidebar />
-        <div className="min-w-0 flex-1">{children}</div>
+        <SidebarInset className="app-bg">
+          <header className="flex h-12 shrink-0 items-center gap-2 px-3">
+            <SidebarTrigger />
+          </header>
+          <div className="min-h-0 flex-1">{children}</div>
+        </SidebarInset>
         <AuthGateModal />
-      </div>
+      </SidebarProvider>
     </TooltipProvider>
   );
 }

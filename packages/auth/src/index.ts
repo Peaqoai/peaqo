@@ -20,6 +20,22 @@ export function getAuth() {
       enabled: true,
       requireEmailVerification: true,
     },
+    // ponytail: env-guarded so missing creds don't break startup. Apple also needs
+    // a Service ID + JWT client secret to actually work; Google works with std creds.
+    socialProviders: {
+      ...(process.env.GOOGLE_CLIENT_ID && {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+        },
+      }),
+      ...(process.env.APPLE_CLIENT_ID && {
+        apple: {
+          clientId: process.env.APPLE_CLIENT_ID,
+          clientSecret: process.env.APPLE_CLIENT_SECRET as string,
+        },
+      }),
+    },
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
         const { sendVerificationEmail } = await import("@repo/email");
