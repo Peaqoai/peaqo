@@ -35,7 +35,7 @@ export default function LoginPage() {
     const { error } = await authClient.signIn.email({
       email: values.email,
       password: values.password,
-      callbackURL: "/app/chat",
+      callbackURL: "/chat",
     });
     if (error) setServerError(error.message ?? "Invalid email or password");
   }

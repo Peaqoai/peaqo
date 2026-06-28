@@ -12,7 +12,8 @@ const User = new Schema(
     creditsUsed: { type: Number, default: 0 },
     creditsLimit: { type: Number, default: 10 },
   },
-  { timestamps: true },
+  // ponytail: share better-auth's "user" collection so auth + app fields live on one doc
+  { timestamps: true, collection: "user", strict: false },
 );
 
 const Organisation = new Schema(

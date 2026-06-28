@@ -51,7 +51,7 @@ export default function OnboardingPage() {
     if (hasTeam) setStep(3);
     else {
       await finish.mutateAsync();
-      router.push("/app/chat");
+      router.push("/chat");
     }
   }
 
@@ -67,7 +67,7 @@ export default function OnboardingPage() {
     } else {
       await finish.mutateAsync();
     }
-    router.push("/app/chat");
+    router.push("/chat");
   }
 
   return (

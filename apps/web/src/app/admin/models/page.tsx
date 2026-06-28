@@ -28,7 +28,7 @@ export default function AdminModelsPage() {
   const me = trpc.user.getMe.useQuery();
 
   useEffect(() => {
-    if (me.data && me.data.role !== "admin") router.replace("/app/chat");
+    if (me.data && me.data.role !== "admin") router.replace("/chat");
   }, [me.data, router]);
 
   const utils = trpc.useUtils();
