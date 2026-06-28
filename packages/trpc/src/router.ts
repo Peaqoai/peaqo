@@ -3,6 +3,7 @@ import { router, publicProcedure } from "./trpc";
 import { onboardingRouter } from "./routers/onboarding";
 import { userRouter } from "./routers/user";
 import { modelsRouter } from "./routers/models";
+import { adminRouter } from "./routers/admin";
 
 export const appRouter = router({
   health: publicProcedure
@@ -11,6 +12,7 @@ export const appRouter = router({
   onboarding: onboardingRouter,
   user: userRouter,
   models: modelsRouter,
+  admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;
