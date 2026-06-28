@@ -21,7 +21,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 
 export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   await connectDB();
-  const u = await UserModel.findById(ctx.userId).lean();
+  const u = (await UserModel.findById(ctx.userId).lean()) as { role?: string } | null;
   if (!u || u.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
   return next({ ctx });
 });

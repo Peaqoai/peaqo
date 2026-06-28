@@ -28,11 +28,11 @@ export async function listProviderModels(
   if (!res.ok) throw new Error(`Provider list failed: ${res.status}`);
 
   const json = (await res.json()) as {
-    data?: { id?: string }[];
-    models?: { name?: string }[];
+    data?: { id?: string; name?: string }[];
+    models?: { id?: string; name?: string }[];
   };
   const items = json.data ?? json.models ?? [];
   return items
-    .map((m) => ({ modelId: ("id" in m ? m.id : m.name) ?? "" }))
+    .map((m) => ({ modelId: m.id ?? m.name ?? "" }))
     .filter((m) => m.modelId);
 }
