@@ -9,10 +9,16 @@
     "./llm/resolve": "./src/llm/resolve.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.1",
+    "@ai-sdk/google": "^4.0.2",
+    "@ai-sdk/groq": "^4.0.1",
+    "@ai-sdk/openai": "^4.0.2",
+    "@openrouter/ai-sdk-provider": "^2.10.0",
     "@repo/auth": "workspace:^",
     "@repo/db": "workspace:^",
     "@repo/email": "workspace:^",
     "@trpc/server": "^11.0.0",
+    "ai": "^7.0.4",
     "mongoose": "^8.5.0",
     "zod": "^4.0.0"
   },
