@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Shield, User as UserIcon, Upload, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
@@ -33,6 +33,13 @@ export function UserMenu() {
   const { data: session } = authClient.useSession();
   const me = trpc.user.getMe.useQuery(undefined, { enabled: !!session?.user });
   const [accountOpen, setAccountOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // server + first client render must match; auth state is only known client-side
+  if (!mounted) {
+    return <div className="h-12 rounded-md" />;
+  }
 
   if (!session?.user) {
     return (
@@ -92,8 +99,8 @@ export function UserMenu() {
 }
 
 function ThemeToggleItem() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const dark = resolvedTheme === "dark";
+  const { theme, setTheme } = useTheme();
+  const dark = theme === "dark";
   return (
     <DropdownMenuItem
       onClick={(e) => {

@@ -49,6 +49,7 @@ import {
   usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 import { ChatModelSelector } from "@/components/chat-model-selector";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 
 function AttachButton() {
   const attachments = usePromptInputAttachments();
@@ -198,8 +199,15 @@ function Thread({
 
   if (messages.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-8 px-4">
-        <h1 className="text-2xl font-semibold">What&rsquo;s on the agenda today?</h1>
+      <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
+        <div className="space-y-2 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            What&rsquo;s on the agenda today?
+          </h1>
+          <p className="text-muted-foreground">
+            Ask anything across GPT, Claude, Gemini and more — attach files or search the web.
+          </p>
+        </div>
         <div className="w-full max-w-2xl">{promptInput}</div>
       </div>
     );
@@ -256,6 +264,13 @@ function Thread({
               </MessageContent>
             </Message>
           ))}
+          {status === "submitted" && (
+            <Message from="assistant">
+              <MessageContent>
+                <Shimmer>Thinking…</Shimmer>
+              </MessageContent>
+            </Message>
+          )}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
