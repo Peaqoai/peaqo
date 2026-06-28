@@ -4,6 +4,9 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
+// model used to auto-generate conversation titles
+export const TITLE_MODEL = "gpt-4o-mini";
+
 export function creditsFor(tokensUsed: number, multiplier: number): number {
   return Math.ceil((tokensUsed / 1000) * multiplier);
 }

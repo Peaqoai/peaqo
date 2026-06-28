@@ -7,22 +7,71 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { toast } from "sonner";
 import { useRequireAuth } from "@/lib/use-require-auth";
 import { trpc } from "@/lib/trpc/client";
-import { ModelPicker } from "@/components/model-picker";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from "@/components/ai-elements/message";
+import {
+  Attachment,
+  AttachmentPreview,
+  AttachmentRemove,
+  Attachments,
+} from "@/components/ai-elements/attachments";
+import {
+  PromptInput,
+  PromptInputActionAddAttachments,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
+  PromptInputBody,
+  PromptInputFooter,
+  PromptInputHeader,
+  type PromptInputMessage,
+  PromptInputSelect,
+  PromptInputSelectContent,
+  PromptInputSelectItem,
+  PromptInputSelectTrigger,
+  PromptInputSelectValue,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+  usePromptInputAttachments,
+} from "@/components/ai-elements/prompt-input";
+
+function AttachmentsDisplay() {
+  const attachments = usePromptInputAttachments();
+  if (attachments.files.length === 0) return null;
+  return (
+    <Attachments variant="inline">
+      {attachments.files.map((file) => (
+        <Attachment data={file} key={file.id} onRemove={() => attachments.remove(file.id)}>
+          <AttachmentPreview />
+          <AttachmentRemove />
+        </Attachment>
+      ))}
+    </Attachments>
+  );
+}
 
 export default function ChatPage() {
   const params = useParams();
   const id = Array.isArray(params.id) ? params.id[0] : undefined;
   const { isAuthed } = useRequireAuth();
 
-  const conv = trpc.conversation.get.useQuery(
-    { id: id! },
-    { enabled: !!id && isAuthed },
-  );
+  const conv = trpc.conversation.get.useQuery({ id: id! }, { enabled: !!id && isAuthed });
 
   if (id && isAuthed && conv.isLoading) {
-    return <div className="text-muted-foreground grid h-full place-items-center text-sm">Loading…</div>;
+    return (
+      <div className="text-muted-foreground grid h-full place-items-center text-sm">
+        Loading…
+      </div>
+    );
   }
 
   const data = conv.data as
@@ -60,7 +109,13 @@ function Thread({
   const createConv = trpc.conversation.create.useMutation();
   const [convId, setConvId] = useState(initialId);
   const [modelId, setModelId] = useState(initialModelId);
-  const [input, setInput] = useState("");
+  const [text, setText] = useState("");
+
+  const modelsQuery = trpc.models.listEnabled.useQuery();
+  const models =
+    modelsQuery.data && modelsQuery.data.length > 0
+      ? modelsQuery.data.map((m) => ({ id: m.modelId, name: m.displayName }))
+      : [{ id: "gpt-4o", name: "GPT-4o" }];
 
   const { messages, sendMessage, status } = useChat({
     messages: initialMessages,
@@ -70,9 +125,10 @@ function Thread({
       toast.error(err.message.includes("402") ? "Out of credits" : "Chat failed"),
   });
 
-  function onSend() {
-    const text = input.trim();
-    if (!text) return;
+  function handleSubmit(message: PromptInputMessage) {
+    const hasText = Boolean(message.text);
+    const hasFiles = Boolean(message.files?.length);
+    if (!hasText && !hasFiles) return;
     requireAuth(async () => {
       let cid = convId;
       if (!cid) {
@@ -82,54 +138,91 @@ function Thread({
         window.history.replaceState(null, "", `/chat/${cid}`);
         utils.conversation.list.invalidate();
       }
-      sendMessage({ text }, { body: { modelId, conversationId: cid } });
-      setInput("");
+      sendMessage(
+        { text: message.text || "Sent with attachments", files: message.files },
+        { body: { modelId, conversationId: cid } },
+      );
+      setText("");
     });
   }
 
-  const composer = (
-    <div className="bg-muted/60 focus-within:ring-ring flex items-end gap-2 rounded-2xl border p-2 focus-within:ring-1">
-      <Input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && onSend()}
-        placeholder="Ask anything…"
-        className="border-0 bg-transparent shadow-none focus-visible:ring-0"
-      />
-      <ModelPicker value={modelId} onChange={setModelId} />
-      <Button onClick={onSend} disabled={status === "streaming"} size="sm">
-        Send
-      </Button>
-    </div>
+  const promptInput = (
+    <PromptInput onSubmit={handleSubmit} globalDrop multiple accept="image/*">
+      <PromptInputHeader>
+        <AttachmentsDisplay />
+      </PromptInputHeader>
+      <PromptInputBody>
+        <PromptInputTextarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Ask anything…"
+        />
+      </PromptInputBody>
+      <PromptInputFooter>
+        <PromptInputTools>
+          <PromptInputActionMenu>
+            <PromptInputActionMenuTrigger />
+            <PromptInputActionMenuContent>
+              <PromptInputActionAddAttachments />
+            </PromptInputActionMenuContent>
+          </PromptInputActionMenu>
+          <PromptInputSelect
+            value={modelId}
+            onValueChange={(v) => setModelId(v as string)}
+          >
+            <PromptInputSelectTrigger>
+              <PromptInputSelectValue />
+            </PromptInputSelectTrigger>
+            <PromptInputSelectContent>
+              {models.map((m) => (
+                <PromptInputSelectItem key={m.id} value={m.id}>
+                  {m.name}
+                </PromptInputSelectItem>
+              ))}
+            </PromptInputSelectContent>
+          </PromptInputSelect>
+        </PromptInputTools>
+        <PromptInputSubmit disabled={!text && status !== "streaming"} status={status} />
+      </PromptInputFooter>
+    </PromptInput>
   );
 
   if (messages.length === 0) {
     return (
-      <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center px-4">
-        <h1 className="mb-8 text-2xl font-semibold">What&rsquo;s on the agenda today?</h1>
-        <div className="w-full">{composer}</div>
+      <div className="flex h-full flex-col items-center justify-center gap-8 px-4">
+        <h1 className="text-2xl font-semibold">What&rsquo;s on the agenda today?</h1>
+        <div className="w-full max-w-2xl">{promptInput}</div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col px-4">
-      <div className="flex-1 space-y-6 overflow-y-auto py-6">
-        {messages.map((m) => (
-          <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-            <div
-              className={
-                m.role === "user"
-                  ? "bg-primary text-primary-foreground max-w-[80%] rounded-2xl px-4 py-2 text-sm"
-                  : "bg-muted max-w-[80%] rounded-2xl px-4 py-2 text-sm whitespace-pre-wrap"
-              }
-            >
-              {m.parts.map((p) => ("text" in p ? p.text : "")).join("")}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="pb-4">{composer}</div>
+    <div className="flex h-full flex-col">
+      <Conversation className="flex-1">
+        <ConversationContent className="mx-auto max-w-2xl">
+          {messages.map((m) => (
+            <Message from={m.role} key={m.id}>
+              <MessageContent>
+                {m.parts.map((part, i) =>
+                  part.type === "text" ? (
+                    <MessageResponse key={`${m.id}-${i}`}>{part.text}</MessageResponse>
+                  ) : part.type === "file" && part.mediaType?.startsWith("image/") ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={`${m.id}-${i}`}
+                      src={part.url}
+                      alt={part.filename ?? "attachment"}
+                      className="max-w-xs rounded-lg"
+                    />
+                  ) : null,
+                )}
+              </MessageContent>
+            </Message>
+          ))}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+      <div className="mx-auto w-full max-w-2xl px-4 pb-4">{promptInput}</div>
     </div>
   );
 }

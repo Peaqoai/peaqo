@@ -1,13 +1,14 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import { trpcServer } from "@hono/trpc-server";
-import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import { streamText, generateText, convertToModelMessages, type UIMessage } from "ai";
 import { appRouter, createTRPCContext } from "@repo/trpc";
 import {
   resolveModel,
   canAfford,
   nextCreditsUsed,
   shouldResetCredits,
+  TITLE_MODEL,
 } from "@repo/trpc/llm/resolve";
 import { getAuth, getSession } from "@repo/auth";
 import { connectDB, UserModel, ConversationModel, ModelCfg, GatewayModel } from "@repo/db";
@@ -64,10 +65,26 @@ app.post("/chat", async (c) => {
       user.creditsUsed = nextCreditsUsed(user.creditsUsed, tokens, cfg.creditMultiplier);
       await user.save();
       if (conversationId) {
-        const set =
-          messages.length <= 1
-            ? { title: userText.slice(0, 60) || "New chat" } // first turn -> auto title
-            : {};
+        // first turn -> generate a concise title with TITLE_MODEL (best-effort)
+        let set: { title?: string } = {};
+        if (messages.length <= 1) {
+          let title = userText.slice(0, 60) || "New chat";
+          try {
+            const gen = await generateText({
+              model: resolveModel({
+                provider: cfg.provider,
+                modelId: TITLE_MODEL,
+                gatewayUrl: gateway.url,
+              }),
+              prompt: `Generate a short, 3-6 word title for a chat that starts with this message. Reply with only the title, no quotes.\n\n${userText}`,
+            });
+            const t = gen.text.trim().replace(/^["']|["']$/g, "");
+            if (t) title = t.slice(0, 60);
+          } catch {
+            // keep the slice fallback
+          }
+          set = { title };
+        }
         await ConversationModel.findByIdAndUpdate(conversationId, {
           ...(Object.keys(set).length ? { $set: set } : {}),
           $push: {
