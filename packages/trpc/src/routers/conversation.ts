@@ -34,6 +34,50 @@ export const conversationRouter = router({
       return { id: c.id as string };
     }),
 
+  // thumbs up/down on an assistant message, addressed by its array index.
+  // value null clears the vote (toggle off).
+  feedback: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        index: z.number().int().min(0),
+        value: z.enum(["up", "down"]).nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await connectDB();
+      await ConversationModel.updateOne(
+        { _id: input.id, userId: ctx.userId },
+        { $set: { [`messages.${input.index}.feedback`]: input.value ?? undefined } },
+      );
+      return { ok: true };
+    }),
+
+  // persist the regenerate history for an assistant message (by array index)
+  setVariants: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        index: z.number().int().min(0),
+        variants: z.array(
+          z.object({
+            content: z.string(),
+            model: z.string().optional(),
+            credits: z.number().optional(),
+            durationMs: z.number().optional(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await connectDB();
+      await ConversationModel.updateOne(
+        { _id: input.id, userId: ctx.userId },
+        { $set: { [`messages.${input.index}.variants`]: input.variants } },
+      );
+      return { ok: true };
+    }),
+
   rename: protectedProcedure
     .input(z.object({ id: z.string(), title: z.string().min(1).max(120) }))
     .mutation(async ({ ctx, input }) => {

@@ -33,6 +33,23 @@ export const MessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
   content: z.string(),
   tokenCount: z.number().min(0).default(0),
+  // assistant-only display metadata (persisted so the toolbar survives refresh)
+  model: z.string().optional(),
+  credits: z.number().min(0).optional(),
+  durationMs: z.number().min(0).optional(),
+  feedback: z.enum(["up", "down"]).optional(),
+  // regenerate history; content+meta of every variant. The top-level fields
+  // above mirror the currently-shown one.
+  variants: z
+    .array(
+      z.object({
+        content: z.string(),
+        model: z.string().optional(),
+        credits: z.number().min(0).optional(),
+        durationMs: z.number().min(0).optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const ConversationSchema = z.object({
@@ -49,5 +66,6 @@ export const ModelSchema = z.object({
   modelId: z.string().min(1),
   displayName: z.string().min(1),
   creditMultiplier: z.number().positive().default(1),
+  minCredits: z.number().min(0).default(1),
   enabled: z.boolean().default(true),
 });

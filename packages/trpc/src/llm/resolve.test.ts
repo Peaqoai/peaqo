@@ -8,8 +8,9 @@ describe("creditsFor", () => {
   it("applies the model multiplier", () => {
     expect(creditsFor(1000, 3)).toBe(3);
   });
-  it("zero tokens costs zero", () => {
-    expect(creditsFor(0, 5)).toBe(0);
+  it("charges the minimum credit floor", () => {
+    expect(creditsFor(0, 5)).toBe(1); // default min 1
+    expect(creditsFor(100, 1, 3)).toBe(3); // floor wins over ceil(0.1)
   });
 });
 

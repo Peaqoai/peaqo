@@ -32,6 +32,8 @@ export type ModelDraft = {
   reasoning?: boolean;
   systemPrompt?: string;
   gatewayId?: string;
+  creditMultiplier?: number;
+  minCredits?: number;
 };
 
 export function ModelFormDialog({
@@ -48,7 +50,14 @@ export function ModelFormDialog({
   const gateways = trpc.admin.gateways.list.useQuery(undefined, { enabled: open });
 
   const [form, setForm] = useState<ModelDraft>(
-    model ?? { provider: "openai", inputPrice: 0, outputPrice: 0, reasoning: false },
+    model ?? {
+      provider: "openai",
+      inputPrice: 0,
+      outputPrice: 0,
+      reasoning: false,
+      creditMultiplier: 1,
+      minCredits: 1,
+    },
   );
   const set = <K extends keyof ModelDraft>(k: K, v: ModelDraft[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -77,6 +86,8 @@ export function ModelFormDialog({
       reasoning: !!form.reasoning,
       systemPrompt: form.systemPrompt?.trim() || undefined,
       gatewayId: form.gatewayId || undefined,
+      creditMultiplier: Number(form.creditMultiplier) || 1,
+      minCredits: Number(form.minCredits) || 1,
     };
     if (!payload.modelId || !payload.displayName) {
       toast.error("Name and Model ID are required");
@@ -197,6 +208,31 @@ export function ModelFormDialog({
                 onChange={(e) => set("outputPrice", Number(e.target.value))}
               />
               <p className="text-muted-foreground text-xs">USD per 1M output tokens</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-1.5">
+              <Label>Credit Multiplier</Label>
+              <Input
+                type="number"
+                step="0.1"
+                min="0.1"
+                value={form.creditMultiplier ?? 1}
+                onChange={(e) => set("creditMultiplier", Number(e.target.value))}
+              />
+              <p className="text-muted-foreground text-xs">×credits per 1K tokens (default 1)</p>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Minimum Credits</Label>
+              <Input
+                type="number"
+                step="1"
+                min="0"
+                value={form.minCredits ?? 1}
+                onChange={(e) => set("minCredits", Number(e.target.value))}
+              />
+              <p className="text-muted-foreground text-xs">floor charged per message (default 1)</p>
             </div>
           </div>
 

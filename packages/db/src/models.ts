@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from "mongoose";
+import { Schema, model, models, deleteModel, type Model } from "mongoose";
 
 const User = new Schema(
   {
@@ -31,6 +31,19 @@ const Message = new Schema(
     role: { type: String, enum: ["user", "assistant"], required: true },
     content: { type: String, required: true },
     tokenCount: { type: Number, default: 0 },
+    model: { type: String },
+    credits: { type: Number },
+    durationMs: { type: Number },
+    feedback: { type: String, enum: ["up", "down"] },
+    variants: [
+      {
+        _id: false,
+        content: { type: String },
+        model: { type: String },
+        credits: { type: Number },
+        durationMs: { type: Number },
+      },
+    ],
   },
   { _id: false, timestamps: true },
 );
@@ -59,16 +72,22 @@ const ModelCfgSchema = new Schema(
     reasoning: { type: Boolean, default: false },
     systemPrompt: String,
     creditMultiplier: { type: Number, default: 1 },
+    minCredits: { type: Number, default: 1 }, // floor charged per turn for this model
     enabled: { type: Boolean, default: true },
   },
   { timestamps: true },
 );
 
-// ponytail: cast to Model<any> — the `models.X ?? model()` union isn't callable otherwise
-export const UserModel = (models.User ?? model("User", User)) as Model<any>;
-export const OrgModel = (models.Organisation ??
-  model("Organisation", Organisation)) as Model<any>;
-export const ConversationModel = (models.Conversation ??
-  model("Conversation", Conversation)) as Model<any>;
-export const ModelCfg = (models.Model ??
-  model("Model", ModelCfgSchema)) as Model<any>;
+// ponytail: in dev, re-register on every module load so schema edits take effect
+// without a manual server restart (Mongoose caches compiled models across HMR and
+// silently drops fields the stale schema doesn't know). Cast to Model<any> — the
+// `models.X ?? model()` union isn't callable otherwise.
+const register = <S>(name: string, schema: S): Model<any> => {
+  if (process.env.NODE_ENV !== "production" && models[name]) deleteModel(name);
+  return (models[name] ?? model(name, schema as never)) as Model<any>;
+};
+
+export const UserModel = register("User", User);
+export const OrgModel = register("Organisation", Organisation);
+export const ConversationModel = register("Conversation", Conversation);
+export const ModelCfg = register("Model", ModelCfgSchema);

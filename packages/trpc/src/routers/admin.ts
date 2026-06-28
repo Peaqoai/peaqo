@@ -93,6 +93,7 @@ const modelInput = z.object({
   systemPrompt: z.string().optional(),
   gatewayId: z.string().optional(),
   creditMultiplier: z.number().positive().default(1),
+  minCredits: z.number().min(0).default(1),
 });
 
 const models = router({

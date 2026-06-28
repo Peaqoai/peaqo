@@ -8,8 +8,14 @@ import { config } from "../config";
 // model used to auto-generate conversation titles (see config.ts)
 export const TITLE_MODEL = config.titleModel;
 
-export function creditsFor(tokensUsed: number, multiplier: number): number {
-  return Math.ceil((tokensUsed / 1000) * multiplier);
+// 1 credit ≈ 1000 tokens × the model's multiplier, rounded up, but never below
+// the model's minimum (both default to 1, configurable per model in admin).
+export function creditsFor(
+  tokensUsed: number,
+  multiplier: number,
+  minCredits = 1,
+): number {
+  return Math.max(minCredits, Math.ceil((tokensUsed / 1000) * multiplier));
 }
 
 export function canAfford(u: { creditsUsed: number; creditsLimit: number }): boolean {
@@ -27,8 +33,9 @@ export function nextCreditsUsed(
   current: number,
   tokensUsed: number,
   multiplier: number,
+  minCredits = 1,
 ): number {
-  return current + creditsFor(tokensUsed, multiplier);
+  return current + creditsFor(tokensUsed, multiplier, minCredits);
 }
 
 // ponytail: only OpenAI's hosted web search (Responses API) is wired; other
