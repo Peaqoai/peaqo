@@ -1156,7 +1156,8 @@ export const PromptInputButton = ({
 
   return (
     <Tooltip>
-      <TooltipTrigger>{button}</TooltipTrigger>
+      {/* base-ui: render the button AS the trigger (Radix asChild equiv) to avoid button-in-button */}
+      <TooltipTrigger render={button} />
       <TooltipContent side={side}>
         {tooltipContent}
         {shortcut && (
