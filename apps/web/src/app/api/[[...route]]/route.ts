@@ -5,6 +5,7 @@ import { streamText, generateText, convertToModelMessages, type UIMessage } from
 import { appRouter, createTRPCContext } from "@repo/trpc";
 import {
   resolveModel,
+  webSearchTools,
   canAfford,
   nextCreditsUsed,
   shouldResetCredits,
@@ -27,10 +28,11 @@ app.post("/chat", async (c) => {
   if (!session) return c.json({ error: "Unauthorized" }, 401); // guest -> client opens auth modal
 
   await connectDB();
-  const { modelId, messages, conversationId } = (await c.req.json()) as {
+  const { modelId, messages, conversationId, webSearch } = (await c.req.json()) as {
     modelId: string;
     messages: UIMessage[];
     conversationId?: string;
+    webSearch?: boolean;
   };
 
   const user = await UserModel.findById(session.userId);
@@ -60,6 +62,7 @@ app.post("/chat", async (c) => {
   const result = streamText({
     model,
     messages: modelMessages,
+    tools: webSearch ? webSearchTools(cfg.provider) : undefined,
     onFinish: async ({ text, usage }) => {
       const tokens = usage.totalTokens ?? 0;
       user.creditsUsed = nextCreditsUsed(user.creditsUsed, tokens, cfg.creditMultiplier);

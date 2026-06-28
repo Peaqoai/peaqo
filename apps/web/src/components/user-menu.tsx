@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Shield, User as UserIcon, Upload } from "lucide-react";
+import { LogOut, Shield, User as UserIcon, Upload, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
@@ -13,7 +14,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -62,11 +62,14 @@ export function UserMenu() {
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel className="truncate">{u?.email}</DropdownMenuLabel>
+          <div className="text-muted-foreground truncate px-2 py-1.5 text-sm">
+            {u?.email}
+          </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setAccountOpen(true)}>
             <UserIcon className="size-4" /> Account
           </DropdownMenuItem>
+          <ThemeToggleItem />
           {u?.role === "admin" && (
             <DropdownMenuItem onClick={() => router.push("/admin/models")}>
               <Shield className="size-4" /> Admin
@@ -85,6 +88,22 @@ export function UserMenu() {
 
       <AccountDialog open={accountOpen} onOpenChange={setAccountOpen} />
     </>
+  );
+}
+
+function ThemeToggleItem() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const dark = resolvedTheme === "dark";
+  return (
+    <DropdownMenuItem
+      onClick={(e) => {
+        e.preventDefault();
+        setTheme(dark ? "light" : "dark");
+      }}
+    >
+      {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      {dark ? "Light mode" : "Dark mode"}
+    </DropdownMenuItem>
   );
 }
 
@@ -124,7 +143,7 @@ function AccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="dark sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Account</DialogTitle>
           <DialogDescription>Manage your profile and credits.</DialogDescription>

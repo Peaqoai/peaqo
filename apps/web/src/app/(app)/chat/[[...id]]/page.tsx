@@ -35,13 +35,11 @@ import {
   AttachmentRemove,
   Attachments,
 } from "@/components/ai-elements/attachments";
+import { PaperclipIcon, GlobeIcon } from "lucide-react";
 import {
   PromptInput,
-  PromptInputActionAddAttachments,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
   PromptInputBody,
+  PromptInputButton,
   PromptInputFooter,
   PromptInputHeader,
   type PromptInputMessage,
@@ -51,6 +49,15 @@ import {
   usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 import { ChatModelSelector } from "@/components/chat-model-selector";
+
+function AttachButton() {
+  const attachments = usePromptInputAttachments();
+  return (
+    <PromptInputButton tooltip="Attach files" onClick={() => attachments.openFileDialog()}>
+      <PaperclipIcon size={16} />
+    </PromptInputButton>
+  );
+}
 
 function AttachmentsDisplay() {
   const attachments = usePromptInputAttachments();
@@ -118,6 +125,7 @@ function Thread({
   const [convId, setConvId] = useState(initialId);
   const [modelId, setModelId] = useState(initialModelId);
   const [text, setText] = useState("");
+  const [webSearch, setWebSearch] = useState(false);
 
   const modelsQuery = trpc.models.listEnabled.useQuery();
   const models =
@@ -152,7 +160,7 @@ function Thread({
       }
       sendMessage(
         { text: message.text || "Sent with attachments", files: message.files },
-        { body: { modelId, conversationId: cid } },
+        { body: { modelId, conversationId: cid, webSearch } },
       );
       setText("");
     });
@@ -172,12 +180,15 @@ function Thread({
       </PromptInputBody>
       <PromptInputFooter>
         <PromptInputTools>
-          <PromptInputActionMenu>
-            <PromptInputActionMenuTrigger />
-            <PromptInputActionMenuContent>
-              <PromptInputActionAddAttachments />
-            </PromptInputActionMenuContent>
-          </PromptInputActionMenu>
+          <AttachButton />
+          <PromptInputButton
+            tooltip={{ content: "Search the web", shortcut: "⌘K" }}
+            variant={webSearch ? "default" : "ghost"}
+            onClick={() => setWebSearch((v) => !v)}
+          >
+            <GlobeIcon size={16} />
+            <span>Search</span>
+          </PromptInputButton>
           <ChatModelSelector value={modelId} onChange={setModelId} models={models} />
         </PromptInputTools>
         <PromptInputSubmit disabled={!text && status !== "streaming"} status={status} />

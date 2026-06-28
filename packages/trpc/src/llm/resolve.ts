@@ -1,4 +1,4 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAI, openai } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
@@ -28,6 +28,16 @@ export function nextCreditsUsed(
   multiplier: number,
 ): number {
   return current + creditsFor(tokensUsed, multiplier);
+}
+
+// ponytail: only OpenAI's hosted web search (Responses API) is wired; other
+// providers no-op until their own search tool is added. Needs the gateway to
+// proxy /responses for non-OpenAI-direct setups.
+export function webSearchTools(provider: string) {
+  if (provider === "openai" || provider === "cloudflare") {
+    return { web_search: openai.tools.webSearchPreview({}) };
+  }
+  return undefined;
 }
 
 export function resolveModel(opts: {
