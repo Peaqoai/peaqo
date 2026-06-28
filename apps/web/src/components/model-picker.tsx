@@ -19,7 +19,7 @@ export function ModelPicker({
 
   return (
     <select
-      className="border-border bg-background rounded-md border px-2 py-1 text-sm"
+      className="text-muted-foreground hover:text-foreground cursor-pointer rounded-md bg-transparent px-2 py-1 text-xs outline-none"
       value={value || options[0]?.modelId}
       onChange={(e) => onChange(e.target.value)}
     >

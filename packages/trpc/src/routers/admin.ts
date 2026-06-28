@@ -1,7 +1,21 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../trpc";
-import { connectDB, GatewayModel, ModelCfg, Provider } from "@repo/db";
+import { connectDB, GatewayModel, ModelCfg, UserModel, Provider } from "@repo/db";
 import { listProviderModels } from "../llm/list-models";
+
+const users = router({
+  // manual credit reset for an account (auto reset is a 30-day rolling window)
+  resetCredits: adminProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ input }) => {
+      await connectDB();
+      await UserModel.updateOne(
+        { _id: input.userId },
+        { creditsUsed: 0, creditsResetAt: new Date() },
+      );
+      return { ok: true };
+    }),
+});
 
 const gateways = router({
   create: adminProcedure
@@ -63,4 +77,4 @@ const models = router({
     }),
 });
 
-export const adminRouter = router({ gateways, models });
+export const adminRouter = router({ gateways, models, users });

@@ -11,6 +11,7 @@ const User = new Schema(
     onboardingComplete: { type: Boolean, default: false },
     creditsUsed: { type: Number, default: 0 },
     creditsLimit: { type: Number, default: 10 },
+    creditsResetAt: { type: Date, default: () => new Date() },
   },
   // ponytail: share better-auth's "user" collection so auth + app fields live on one doc
   { timestamps: true, collection: "user", strict: false },

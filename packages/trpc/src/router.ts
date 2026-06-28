@@ -4,6 +4,7 @@ import { onboardingRouter } from "./routers/onboarding";
 import { userRouter } from "./routers/user";
 import { modelsRouter } from "./routers/models";
 import { adminRouter } from "./routers/admin";
+import { conversationRouter } from "./routers/conversation";
 
 export const appRouter = router({
   health: publicProcedure
@@ -13,6 +14,7 @@ export const appRouter = router({
   user: userRouter,
   models: modelsRouter,
   admin: adminRouter,
+  conversation: conversationRouter,
 });
 
 export type AppRouter = typeof appRouter;

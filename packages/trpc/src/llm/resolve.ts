@@ -12,6 +12,13 @@ export function canAfford(u: { creditsUsed: number; creditsLimit: number }): boo
   return u.creditsUsed < u.creditsLimit;
 }
 
+// ponytail: 30-day rolling reset; swap for a billing-period anchor if Stripe lands
+const PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
+export function shouldResetCredits(resetAt: Date | undefined, now = new Date()): boolean {
+  if (!resetAt) return true;
+  return now.getTime() - new Date(resetAt).getTime() >= PERIOD_MS;
+}
+
 export function nextCreditsUsed(
   current: number,
   tokensUsed: number,

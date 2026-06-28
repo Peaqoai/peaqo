@@ -3,7 +3,12 @@ import { handle } from "hono/vercel";
 import { trpcServer } from "@hono/trpc-server";
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { appRouter, createTRPCContext } from "@repo/trpc";
-import { resolveModel, canAfford, nextCreditsUsed } from "@repo/trpc/llm/resolve";
+import {
+  resolveModel,
+  canAfford,
+  nextCreditsUsed,
+  shouldResetCredits,
+} from "@repo/trpc/llm/resolve";
 import { getAuth, getSession } from "@repo/auth";
 import { connectDB, UserModel, ConversationModel, ModelCfg, GatewayModel } from "@repo/db";
 
@@ -28,7 +33,12 @@ app.post("/chat", async (c) => {
   };
 
   const user = await UserModel.findById(session.userId);
-  if (!user || !canAfford(user)) return c.json({ error: "Out of credits" }, 402);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  if (shouldResetCredits(user.creditsResetAt)) {
+    user.creditsUsed = 0;
+    user.creditsResetAt = new Date();
+  }
+  if (!canAfford(user)) return c.json({ error: "Out of credits" }, 402);
 
   const cfg = await ModelCfg.findOne({ modelId, enabled: true });
   if (!cfg) return c.json({ error: "Model not available" }, 400);
@@ -41,21 +51,33 @@ app.post("/chat", async (c) => {
     gatewayUrl: gateway.url,
   });
 
+  const textOf = (m?: UIMessage) =>
+    m?.parts?.map((p) => ("text" in p ? p.text : "")).join("") ?? "";
+  const userText = textOf(messages[messages.length - 1]);
+
   const modelMessages = await convertToModelMessages(messages);
   const result = streamText({
     model,
     messages: modelMessages,
-    onFinish: async ({ usage }) => {
+    onFinish: async ({ text, usage }) => {
       const tokens = usage.totalTokens ?? 0;
       user.creditsUsed = nextCreditsUsed(user.creditsUsed, tokens, cfg.creditMultiplier);
       await user.save();
       if (conversationId) {
-        const last = messages[messages.length - 1];
-        const text = last?.parts
-          ?.map((p) => ("text" in p ? p.text : ""))
-          .join("") ?? "";
+        const set =
+          messages.length <= 1
+            ? { title: userText.slice(0, 60) || "New chat" } // first turn -> auto title
+            : {};
         await ConversationModel.findByIdAndUpdate(conversationId, {
-          $push: { messages: { role: "user", content: text, tokenCount: tokens } },
+          ...(Object.keys(set).length ? { $set: set } : {}),
+          $push: {
+            messages: {
+              $each: [
+                { role: "user", content: userText, tokenCount: 0 },
+                { role: "assistant", content: text, tokenCount: tokens },
+              ],
+            },
+          },
         });
       }
     },
