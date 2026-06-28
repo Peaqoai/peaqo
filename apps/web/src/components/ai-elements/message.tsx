@@ -11,13 +11,18 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
+} from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
 import type { UIMessage } from "ai";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { BotIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import {
     createContext,
@@ -43,6 +48,27 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
     )}
     {...props}
   />
+);
+
+export const MessageAvatar = ({
+  from,
+  src,
+  name,
+}: {
+  from: UIMessage["role"];
+  src?: string;
+  name?: string;
+}) => (
+  <Avatar className="size-7 shrink-0">
+    {from === "user" && src && <AvatarImage src={src} alt={name} />}
+    <AvatarFallback>
+      {from === "user" ? (
+        (name ?? "?").slice(0, 2).toUpperCase()
+      ) : (
+        <BotIcon className="size-4" />
+      )}
+    </AvatarFallback>
+  </Avatar>
 );
 
 export type MessageContentProps = HTMLAttributes<HTMLDivElement>;

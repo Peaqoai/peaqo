@@ -51,7 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                 <Sparkles className="size-4" />
               </div>
-              <span className="font-[family-name:var(--font-brand)] text-lg font-semibold tracking-tight">
+              <span className="font-(family-name:--font-brand) text-lg font-semibold tracking-tight">
                 Peaqo
               </span>
             </SidebarMenuButton>

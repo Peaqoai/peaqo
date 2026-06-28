@@ -15,12 +15,14 @@ import {
 } from "@/components/ai-elements/conversation";
 import {
     Message,
+    MessageAvatar,
     MessageContent,
     MessageResponse,
     MessageToolbar,
     MessageActions,
     MessageAction,
 } from "@/components/ai-elements/message";
+import { cn } from "@/lib/utils";
 import {
     Reasoning,
     ReasoningContent,
@@ -316,6 +318,7 @@ function Thread({
   const [text, setText] = useState("");
   const [webSearch, setWebSearch] = useState(false);
 
+  const meQuery = trpc.user.getMe.useQuery();
   const modelsQuery = trpc.models.listEnabled.useQuery();
   const models =
     modelsQuery.data && modelsQuery.data.length > 0
@@ -466,6 +469,18 @@ function Thread({
         <ConversationContent className="mx-auto max-w-2xl">
           {messages.map((m, i) => (
             <Message from={m.role} key={m.id}>
+              <div
+                className={cn(
+                  "flex w-full items-start gap-2",
+                  m.role === "user" && "flex-row-reverse"
+                )}
+              >
+                <MessageAvatar
+                  from={m.role}
+                  src={meQuery.data?.avatarUrl}
+                  name={meQuery.data?.name}
+                />
+                <div className="flex min-w-0 flex-col gap-2">
               <MessageContent>
                 {m.parts.map((part, i) => {
                   const key = `${m.id}-${i}`;
@@ -527,13 +542,18 @@ function Thread({
                   }
                 />
               )}
+                </div>
+              </div>
             </Message>
           ))}
           {status === "submitted" && (
             <Message from="assistant">
-              <MessageContent>
-                <Shimmer>Thinking…</Shimmer>
-              </MessageContent>
+              <div className="flex w-full items-start gap-2">
+                <MessageAvatar from="assistant" />
+                <MessageContent>
+                  <Shimmer>Thinking…</Shimmer>
+                </MessageContent>
+              </div>
             </Message>
           )}
         </ConversationContent>
