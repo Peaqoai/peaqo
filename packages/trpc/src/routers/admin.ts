@@ -1,7 +1,24 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../trpc";
-import { connectDB, GatewayModel, ModelCfg, UserModel, Provider } from "@repo/db";
+import {
+  connectDB,
+  ConversationModel,
+  GatewayModel,
+  ModelCfg,
+  UserModel,
+  Provider,
+} from "@repo/db";
 import { listProviderModels } from "../llm/list-models";
+
+// platform-wide counts for the admin dashboard
+const stats = adminProcedure.query(async () => {
+  await connectDB();
+  const [users, chats] = await Promise.all([
+    UserModel.countDocuments(),
+    ConversationModel.countDocuments(),
+  ]);
+  return { users, chats };
+});
 
 const pageInput = z.object({
   page: z.number().int().min(0).default(0),
@@ -181,4 +198,4 @@ const models = router({
     }),
 });
 
-export const adminRouter = router({ gateways, models, users });
+export const adminRouter = router({ gateways, models, users, stats });
