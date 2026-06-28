@@ -1,6 +1,7 @@
 import { createOpenAI, openai } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createVertex } from "@ai-sdk/google-vertex";
 import { createGroq } from "@ai-sdk/groq";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { config } from "../config";
@@ -61,6 +62,10 @@ export function resolveModel(opts: {
       return createAnthropic({ baseURL: gatewayUrl })(modelId);
     case "google":
       return createGoogleGenerativeAI({ baseURL: gatewayUrl })(modelId);
+    case "vertex":
+      // Vertex auth/endpoint come from env (GOOGLE_VERTEX_PROJECT/LOCATION +
+      // ADC); gatewayUrl is unused.
+      return createVertex()(modelId);
     case "groq":
       return createGroq({ baseURL: gatewayUrl })(modelId);
     case "openrouter":

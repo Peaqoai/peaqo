@@ -130,7 +130,8 @@ const models = router({
     .query(async ({ input }) => {
       const gw = getGateway(input.gatewayId);
       if (!gw) throw new Error("Gateway not found");
-      return listGatewayModels(gw.url, gatewayKey(gw));
+      if (gw.models) return gw.models.map((modelId) => ({ modelId, provider: gw.provider! }));
+      return listGatewayModels(gw.url, gatewayKey(gw), gw.forceProvider);
     }),
   // import every model a gateway exposes, stored disabled — admin enables later
   importFromGateway: adminProcedure
@@ -139,7 +140,9 @@ const models = router({
       await connectDB();
       const gw = getGateway(input.gatewayId);
       if (!gw) throw new Error("Gateway not found");
-      const list = await listGatewayModels(gw.url, gatewayKey(gw));
+      const list = gw.models
+        ? gw.models.map((modelId) => ({ modelId, provider: gw.provider! }))
+        : await listGatewayModels(gw.url, gatewayKey(gw), gw.forceProvider);
       if (!list.length) return { imported: 0 };
       // upsert: new rows land disabled; existing rows keep their enabled state
       const ops = list.map((m) => ({
