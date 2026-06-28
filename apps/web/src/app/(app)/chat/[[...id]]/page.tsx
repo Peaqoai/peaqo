@@ -341,6 +341,7 @@ function Thread({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
     onFinish: ({ message }) => {
       utils.conversation.list.invalidate();
+      utils.user.getMe.invalidate(); // refresh credits balance in sidebar
       const idx = regenIndexRef.current;
       regenIndexRef.current = null;
       if (idx == null) return;
