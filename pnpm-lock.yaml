@@ -218,6 +218,9 @@ importers:
       '@repo/db':
         specifier: workspace:^
         version: link:../db
+      '@repo/email':
+        specifier: workspace:^
+        version: link:../email
       '@trpc/server':
         specifier: ^11.0.0
         version: 11.18.0(typescript@5.9.2)

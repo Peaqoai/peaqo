@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose";
+import { Schema, model, models, type Model } from "mongoose";
 
 const User = new Schema(
   {
@@ -64,9 +64,13 @@ const ModelCfgSchema = new Schema(
   { timestamps: true },
 );
 
-export const UserModel = models.User ?? model("User", User);
-export const OrgModel = models.Organisation ?? model("Organisation", Organisation);
-export const ConversationModel =
-  models.Conversation ?? model("Conversation", Conversation);
-export const GatewayModel = models.Gateway ?? model("Gateway", Gateway);
-export const ModelCfg = models.Model ?? model("Model", ModelCfgSchema);
+// ponytail: cast to Model<any> — the `models.X ?? model()` union isn't callable otherwise
+export const UserModel = (models.User ?? model("User", User)) as Model<any>;
+export const OrgModel = (models.Organisation ??
+  model("Organisation", Organisation)) as Model<any>;
+export const ConversationModel = (models.Conversation ??
+  model("Conversation", Conversation)) as Model<any>;
+export const GatewayModel = (models.Gateway ??
+  model("Gateway", Gateway)) as Model<any>;
+export const ModelCfg = (models.Model ??
+  model("Model", ModelCfgSchema)) as Model<any>;
