@@ -100,7 +100,7 @@ app.post("/chat", async (c) => {
     },
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({ sendReasoning: true, sendSources: true });
 });
 
 app.get("/ping", (c) => c.json({ pong: true }));

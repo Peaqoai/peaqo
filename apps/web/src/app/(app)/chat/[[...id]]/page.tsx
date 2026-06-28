@@ -18,6 +18,18 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+} from "@/components/ai-elements/tool";
+import {
   Attachment,
   AttachmentPreview,
   AttachmentRemove,
@@ -203,19 +215,47 @@ function Thread({
           {messages.map((m) => (
             <Message from={m.role} key={m.id}>
               <MessageContent>
-                {m.parts.map((part, i) =>
-                  part.type === "text" ? (
-                    <MessageResponse key={`${m.id}-${i}`}>{part.text}</MessageResponse>
-                  ) : part.type === "file" && part.mediaType?.startsWith("image/") ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={`${m.id}-${i}`}
-                      src={part.url}
-                      alt={part.filename ?? "attachment"}
-                      className="max-w-xs rounded-lg"
-                    />
-                  ) : null,
-                )}
+                {m.parts.map((part, i) => {
+                  const key = `${m.id}-${i}`;
+                  if (part.type === "text")
+                    return <MessageResponse key={key}>{part.text}</MessageResponse>;
+                  if (part.type === "reasoning")
+                    return (
+                      <Reasoning key={key} isStreaming={part.state === "streaming"}>
+                        <ReasoningTrigger />
+                        <ReasoningContent>{part.text}</ReasoningContent>
+                      </Reasoning>
+                    );
+                  if (part.type === "file" && part.mediaType?.startsWith("image/"))
+                    return (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={key}
+                        src={part.url}
+                        alt={part.filename ?? "attachment"}
+                        className="max-w-xs rounded-lg"
+                      />
+                    );
+                  if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
+                    const tp = part as {
+                      type: string;
+                      state: "input-streaming" | "input-available" | "output-available" | "output-error";
+                      input?: unknown;
+                      output?: unknown;
+                      errorText?: string;
+                    };
+                    return (
+                      <Tool key={key}>
+                        <ToolHeader type={tp.type as `tool-${string}`} state={tp.state} />
+                        <ToolContent>
+                          <ToolInput input={tp.input} />
+                          <ToolOutput output={tp.output} errorText={tp.errorText} />
+                        </ToolContent>
+                      </Tool>
+                    );
+                  }
+                  return null;
+                })}
               </MessageContent>
             </Message>
           ))}
