@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
+import { ModelPickerDialog } from "@/components/model-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,12 +53,12 @@ export function ModelFormDialog({
   const set = <K extends keyof ModelDraft>(k: K, v: ModelDraft[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  // list models from the provider so the admin can search & pick the Model ID
-  const [apiKey, setApiKey] = useState("");
-  const providerModels = trpc.admin.models.listFromProvider.useQuery(
-    { provider: (form.provider ?? "openai") as never, apiKey },
-    { enabled: false, retry: false },
-  );
+  // model picker: list comes from the selected gateway (env key), provider derived
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const envStatus = trpc.admin.models.envStatus.useQuery(undefined, {
+    enabled: open,
+  });
+  const canImport = !!envStatus.data?.gatewayKey && !!form.gatewayId;
 
   const onDone = () => {
     utils.admin.models.listPaginated.invalidate();
@@ -99,6 +100,57 @@ export function ModelFormDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
+          <div className="grid gap-1.5">
+            <Label>Gateway</Label>
+            <select
+              className={selectCls}
+              value={form.gatewayId ?? ""}
+              onChange={(e) => set("gatewayId", e.target.value)}
+            >
+              <option value="">No gateway (not chat-usable yet)</option>
+              {gateways.data?.map((g) => (
+                <option key={String(g._id)} value={String(g._id)}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>Provider Model ID *</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Select a model from the gateway"
+                value={form.modelId ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  set("modelId", v);
+                  if (!form.displayName) set("displayName", v);
+                }}
+              />
+              {envStatus.data?.gatewayKey && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!canImport}
+                  onClick={() => setPickerOpen(true)}
+                >
+                  Select model
+                </Button>
+              )}
+            </div>
+            {envStatus.data && !envStatus.data.gatewayKey && (
+              <p className="text-muted-foreground text-xs">
+                Set GATEWAY_API_KEY in env to browse models from a gateway.
+              </p>
+            )}
+            {envStatus.data?.gatewayKey && !form.gatewayId && (
+              <p className="text-muted-foreground text-xs">
+                Pick a gateway above to browse its models.
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-1.5">
               <Label>Model Name *</Label>
@@ -122,56 +174,6 @@ export function ModelFormDialog({
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label>Provider API key (to list models)</Label>
-            <div className="flex gap-2">
-              <Input
-                type="password"
-                placeholder="Paste key, then search models"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!apiKey || providerModels.isFetching}
-                onClick={() => providerModels.refetch()}
-              >
-                {providerModels.isFetching ? "Loading…" : "Search models"}
-              </Button>
-            </div>
-            {providerModels.error && (
-              <p className="text-destructive text-xs">{providerModels.error.message}</p>
-            )}
-            {providerModels.data && (
-              <p className="text-muted-foreground text-xs">
-                {providerModels.data.length} models loaded — type below to search.
-              </p>
-            )}
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label>Provider Model ID *</Label>
-            <Input
-              list="provider-model-ids"
-              placeholder="e.g., gpt-4-turbo-preview"
-              value={form.modelId ?? ""}
-              onChange={(e) => {
-                const v = e.target.value;
-                set("modelId", v);
-                if (!form.displayName) set("displayName", v);
-              }}
-            />
-            <datalist id="provider-model-ids">
-              {providerModels.data?.map((m) => (
-                <option key={m.modelId} value={m.modelId} />
-              ))}
-            </datalist>
-            <p className="text-muted-foreground text-xs">
-              The exact model identifier used by the provider&rsquo;s API.
-            </p>
           </div>
 
           <div className="grid gap-1.5">
@@ -206,22 +208,6 @@ export function ModelFormDialog({
               />
               <p className="text-muted-foreground text-xs">USD per 1M output tokens</p>
             </div>
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label>Gateway (optional)</Label>
-            <select
-              className={selectCls}
-              value={form.gatewayId ?? ""}
-              onChange={(e) => set("gatewayId", e.target.value)}
-            >
-              <option value="">No gateway (not chat-usable yet)</option>
-              {gateways.data?.map((g) => (
-                <option key={String(g._id)} value={String(g._id)}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="flex items-center justify-between rounded-md border p-3">
@@ -260,6 +246,17 @@ export function ModelFormDialog({
             {pending ? "Saving…" : editing ? "Save Model" : "Create Model"}
           </Button>
         </DialogFooter>
+
+        <ModelPickerDialog
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          gatewayId={form.gatewayId ?? ""}
+          onSelect={(m) => {
+            set("modelId", m.modelId);
+            set("provider", m.provider);
+            if (!form.displayName) set("displayName", m.modelId);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

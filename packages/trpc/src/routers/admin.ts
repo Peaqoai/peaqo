@@ -8,7 +8,7 @@ import {
   UserModel,
   Provider,
 } from "@repo/db";
-import { listProviderModels } from "../llm/list-models";
+import { listGatewayModels, gatewayKeyAvailable } from "../llm/list-models";
 
 // platform-wide counts for the admin dashboard
 const stats = adminProcedure.query(async () => {
@@ -132,9 +132,17 @@ const models = router({
       await ModelCfg.findByIdAndUpdate(input.id, { enabled: input.enabled });
       return { ok: true };
     }),
-  listFromProvider: adminProcedure
-    .input(z.object({ provider: Provider, apiKey: z.string() }))
-    .query(async ({ input }) => listProviderModels(input.provider, input.apiKey)),
+  // is the gateway list key configured in env? gates the import UI
+  envStatus: adminProcedure.query(() => ({ gatewayKey: gatewayKeyAvailable() })),
+  // list models from a gateway (env key); provider derived per model
+  listFromGateway: adminProcedure
+    .input(z.object({ gatewayId: z.string() }))
+    .query(async ({ input }) => {
+      await connectDB();
+      const gw = await GatewayModel.findById(input.gatewayId).lean();
+      if (!gw) throw new Error("Gateway not found");
+      return listGatewayModels((gw as unknown as { url: string }).url);
+    }),
   listConfigured: adminProcedure.query(async () => {
     await connectDB();
     return ModelCfg.find().lean();
