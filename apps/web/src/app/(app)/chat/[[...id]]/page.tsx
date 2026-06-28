@@ -45,16 +45,12 @@ import {
   PromptInputFooter,
   PromptInputHeader,
   type PromptInputMessage,
-  PromptInputSelect,
-  PromptInputSelectContent,
-  PromptInputSelectItem,
-  PromptInputSelectTrigger,
-  PromptInputSelectValue,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
   usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
+import { ChatModelSelector } from "@/components/chat-model-selector";
 
 function AttachmentsDisplay() {
   const attachments = usePromptInputAttachments();
@@ -126,8 +122,12 @@ function Thread({
   const modelsQuery = trpc.models.listEnabled.useQuery();
   const models =
     modelsQuery.data && modelsQuery.data.length > 0
-      ? modelsQuery.data.map((m) => ({ id: m.modelId, name: m.displayName }))
-      : [{ id: "gpt-4o", name: "GPT-4o" }];
+      ? modelsQuery.data.map((m) => ({
+          id: m.modelId,
+          name: m.displayName,
+          provider: m.provider,
+        }))
+      : [{ id: "gpt-4o", name: "GPT-4o", provider: "openai" }];
 
   const { messages, sendMessage, status } = useChat({
     messages: initialMessages,
@@ -178,21 +178,7 @@ function Thread({
               <PromptInputActionAddAttachments />
             </PromptInputActionMenuContent>
           </PromptInputActionMenu>
-          <PromptInputSelect
-            value={modelId}
-            onValueChange={(v) => setModelId(v as string)}
-          >
-            <PromptInputSelectTrigger>
-              <PromptInputSelectValue />
-            </PromptInputSelectTrigger>
-            <PromptInputSelectContent>
-              {models.map((m) => (
-                <PromptInputSelectItem key={m.id} value={m.id}>
-                  {m.name}
-                </PromptInputSelectItem>
-              ))}
-            </PromptInputSelectContent>
-          </PromptInputSelect>
+          <ChatModelSelector value={modelId} onChange={setModelId} models={models} />
         </PromptInputTools>
         <PromptInputSubmit disabled={!text && status !== "streaming"} status={status} />
       </PromptInputFooter>
