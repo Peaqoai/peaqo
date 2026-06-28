@@ -1,258 +1,203 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
+import { Cpu, Plus, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/data-table";
+import { ModelFormDialog, type ModelDraft } from "@/components/model-form-dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
-const PROVIDERS = [
-  "openai",
-  "anthropic",
-  "google",
-  "groq",
-  "openrouter",
-  "cloudflare",
-] as const;
-type ProviderT = (typeof PROVIDERS)[number];
+type Row = {
+  _id: string;
+  provider: string;
+  modelId: string;
+  displayName: string;
+  description?: string;
+  inputPrice?: number;
+  outputPrice?: number;
+  reasoning?: boolean;
+  enabled: boolean;
+};
+
+const PROVIDERS = ["openai", "anthropic", "google", "groq", "openrouter", "cloudflare"];
+const selectCls = "border-border bg-background h-9 rounded-md border px-2 text-sm";
 
 export default function AdminModelsPage() {
-  const router = useRouter();
-  const me = trpc.user.getMe.useQuery();
-
-  useEffect(() => {
-    if (me.data && me.data.role !== "admin") router.replace("/chat");
-  }, [me.data, router]);
+  const [search, setSearch] = useState("");
+  const [provider, setProvider] = useState("");
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<ModelDraft | undefined>(undefined);
 
   const utils = trpc.useUtils();
-  const gateways = trpc.admin.gateways.list.useQuery(undefined, {
-    enabled: me.data?.role === "admin",
+  const query = trpc.admin.models.listPaginated.useQuery({
+    page: pagination.pageIndex,
+    pageSize: pagination.pageSize,
+    search,
+    provider: (provider || undefined) as never,
   });
-  const configured = trpc.admin.models.listConfigured.useQuery(undefined, {
-    enabled: me.data?.role === "admin",
-  });
+  const invalidate = () => utils.admin.models.listPaginated.invalidate();
 
-  const createGateway = trpc.admin.gateways.create.useMutation({
-    onSuccess: () => utils.admin.gateways.list.invalidate(),
-  });
-  const deleteGateway = trpc.admin.gateways.delete.useMutation({
-    onSuccess: () => utils.admin.gateways.list.invalidate(),
-  });
-  const toggleModel = trpc.admin.models.toggleModel.useMutation({
-    onSuccess: () => utils.admin.models.listConfigured.invalidate(),
-  });
-  const setMultiplier = trpc.admin.models.setMultiplier.useMutation({
-    onSuccess: () => utils.admin.models.listConfigured.invalidate(),
+  const setEnabled = trpc.admin.models.setEnabled.useMutation({ onSuccess: invalidate });
+  const remove = trpc.admin.models.remove.useMutation({
+    onSuccess: () => {
+      invalidate();
+      toast.success("Model deleted");
+    },
   });
 
-  // gateway form
-  const [gwName, setGwName] = useState("");
-  const [gwUrl, setGwUrl] = useState("");
+  function onFilter(setter: (v: string) => void) {
+    return (v: string) => {
+      setter(v);
+      setPagination((p) => ({ ...p, pageIndex: 0 }));
+    };
+  }
 
-  // model fetch form
-  const [provider, setProvider] = useState<ProviderT>("openai");
-  const [gatewayId, setGatewayId] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const fetched = trpc.admin.models.listFromProvider.useQuery(
-    { provider, apiKey },
-    { enabled: false },
-  );
+  function openCreate() {
+    setEditing(undefined);
+    setDialogOpen(true);
+  }
+  function openEdit(row: Row) {
+    setEditing(row);
+    setDialogOpen(true);
+  }
 
-  if (me.isLoading) return <main className="p-8">Loading…</main>;
-  if (me.data?.role !== "admin") return <main className="p-8">Forbidden</main>;
-
-  return (
-    <main className="mx-auto max-w-3xl space-y-6 p-6">
-      <h1 className="text-xl font-semibold">Model administration</h1>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Cloudflare AI Gateways</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {gateways.data?.map((g) => (
-            <div key={String(g._id)} className="flex items-center justify-between">
-              <span className="text-sm">
-                {g.name} — <span className="text-muted-foreground">{g.url}</span>
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => deleteGateway.mutate({ id: String(g._id) })}
-              >
-                Delete
-              </Button>
-            </div>
-          ))}
-          <div className="flex gap-2">
-            <Input
-              placeholder="Name"
-              value={gwName}
-              onChange={(e) => setGwName(e.target.value)}
+  const columns = useMemo<ColumnDef<Row, unknown>[]>(
+    () => [
+      {
+        header: "Name",
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium">{row.original.displayName}</div>
+            {row.original.description && (
+              <div className="text-muted-foreground max-w-xs truncate text-xs">
+                {row.original.description}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        header: "Provider",
+        cell: ({ row }) => <Badge variant="secondary">{row.original.provider}</Badge>,
+      },
+      {
+        header: "Model ID",
+        cell: ({ row }) => (
+          <code className="text-muted-foreground text-xs">{row.original.modelId}</code>
+        ),
+      },
+      {
+        header: "Enabled",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={row.original.enabled}
+              onCheckedChange={(v: boolean) =>
+                setEnabled.mutate({ id: row.original._id, enabled: v })
+              }
             />
-            <Input
-              placeholder="https://gateway.ai.cloudflare.com/..."
-              value={gwUrl}
-              onChange={(e) => setGwUrl(e.target.value)}
-            />
+            {row.original.reasoning && <Badge variant="outline">Reasoning</Badge>}
+          </div>
+        ),
+      },
+      {
+        header: "Pricing (per 1M)",
+        cell: ({ row }) => (
+          <div className="text-sm">
+            <div>${(row.original.inputPrice ?? 0).toFixed(2)} in</div>
+            <div>${(row.original.outputPrice ?? 0).toFixed(2)} out</div>
+          </div>
+        ),
+      },
+      {
+        header: "Actions",
+        id: "actions",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon-sm" onClick={() => openEdit(row.original)}>
+              <Pencil className="size-4" />
+            </Button>
             <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-destructive hover:text-destructive"
               onClick={() => {
-                createGateway.mutate({ name: gwName, url: gwUrl });
-                setGwName("");
-                setGwUrl("");
+                if (confirm(`Delete ${row.original.displayName}?`)) {
+                  remove.mutate({ id: row.original._id });
+                }
               }}
-              disabled={!gwName || !gwUrl}
             >
-              Add
+              <Trash2 className="size-4" />
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        ),
+      },
+    ],
+    [setEnabled, remove],
+  );
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Fetch models from provider</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-muted grid size-10 place-items-center rounded-lg">
+            <Cpu className="size-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">AI Models</h1>
+            <p className="text-muted-foreground text-sm">
+              Manage AI models available in the system
+            </p>
+          </div>
+        </div>
+        <Button onClick={openCreate}>
+          <Plus className="size-4" /> Add Model
+        </Button>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={(query.data?.rows ?? []) as Row[]}
+        total={query.data?.total ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        isLoading={query.isLoading}
+        toolbar={
           <div className="flex flex-wrap gap-2">
-            <div className="grid gap-1">
-              <Label className="text-xs">Provider</Label>
-              <select
-                className="border-border bg-background rounded-md border px-2 py-1 text-sm"
-                value={provider}
-                onChange={(e) => setProvider(e.target.value as ProviderT)}
-              >
-                {PROVIDERS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">Gateway</Label>
-              <select
-                className="border-border bg-background rounded-md border px-2 py-1 text-sm"
-                value={gatewayId}
-                onChange={(e) => setGatewayId(e.target.value)}
-              >
-                <option value="">Select gateway…</option>
-                {gateways.data?.map((g) => (
-                  <option key={String(g._id)} value={String(g._id)}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid flex-1 gap-1">
-              <Label className="text-xs">Provider API key</Label>
-              <Input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={() => fetched.refetch()}
-                disabled={!apiKey || fetched.isFetching}
-              >
-                {fetched.isFetching ? "Fetching…" : "Fetch"}
-              </Button>
-            </div>
-          </div>
-
-          {fetched.error && (
-            <p className="text-destructive text-sm">{fetched.error.message}</p>
-          )}
-
-          <div className="max-h-72 space-y-1 overflow-y-auto">
-            {fetched.data?.map((m) => (
-              <div
-                key={m.modelId}
-                className="flex items-center justify-between border-b py-1 text-sm"
-              >
-                <span>{m.modelId}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!gatewayId}
-                  onClick={() =>
-                    toggleModel.mutate({
-                      provider,
-                      gatewayId,
-                      modelId: m.modelId,
-                      displayName: m.modelId,
-                      enabled: true,
-                    })
-                  }
-                >
-                  Enable
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Configured models</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {configured.data?.length === 0 && (
-            <p className="text-muted-foreground text-sm">None yet.</p>
-          )}
-          {configured.data?.map((m) => (
-            <div
-              key={String(m._id)}
-              className="flex items-center justify-between gap-2 border-b py-1 text-sm"
+            <Input
+              placeholder="Search models…"
+              value={search}
+              onChange={(e) => onFilter(setSearch)(e.target.value)}
+              className="max-w-sm"
+            />
+            <select
+              className={selectCls}
+              value={provider}
+              onChange={(e) => onFilter(setProvider)(e.target.value)}
             >
-              <span>
-                {m.displayName}{" "}
-                <span className="text-muted-foreground">({m.provider})</span>
-              </span>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs">×</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  className="w-20"
-                  defaultValue={m.creditMultiplier}
-                  onBlur={(e) =>
-                    setMultiplier.mutate({
-                      modelId: m.modelId,
-                      creditMultiplier: Number(e.target.value),
-                    })
-                  }
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    toggleModel.mutate({
-                      provider: m.provider,
-                      gatewayId: String(m.gatewayId),
-                      modelId: m.modelId,
-                      displayName: m.displayName,
-                      enabled: !m.enabled,
-                    })
-                  }
-                >
-                  {m.enabled ? "Disable" : "Enable"}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    </main>
+              <option value="">All Provider</option>
+              {PROVIDERS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
+      />
+
+      <ModelFormDialog
+        key={`${editing?._id ?? "new"}-${dialogOpen}`}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        model={editing}
+      />
+    </div>
   );
 }

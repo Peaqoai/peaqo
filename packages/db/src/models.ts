@@ -11,6 +11,7 @@ const User = new Schema(
     onboardingComplete: { type: Boolean, default: false },
     creditsUsed: { type: Number, default: 0 },
     creditsLimit: { type: Number, default: 10 },
+    creditsResetAt: { type: Date, default: () => new Date() },
   },
   // ponytail: share better-auth's "user" collection so auth + app fields live on one doc
   { timestamps: true, collection: "user", strict: false },
@@ -56,9 +57,15 @@ const Gateway = new Schema(
 const ModelCfgSchema = new Schema(
   {
     provider: { type: String, required: true },
-    gatewayId: { type: Schema.Types.ObjectId, ref: "Gateway", required: true },
+    // optional: a model can be created standalone; set a gateway to make it chat-usable
+    gatewayId: { type: Schema.Types.ObjectId, ref: "Gateway" },
     modelId: { type: String, required: true },
     displayName: { type: String, required: true },
+    description: String,
+    inputPrice: { type: Number, default: 0 }, // USD per 1M input tokens
+    outputPrice: { type: Number, default: 0 }, // USD per 1M output tokens
+    reasoning: { type: Boolean, default: false },
+    systemPrompt: String,
     creditMultiplier: { type: Number, default: 1 },
     enabled: { type: Boolean, default: true },
   },
