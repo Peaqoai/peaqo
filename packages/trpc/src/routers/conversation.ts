@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { connectDB, ConversationModel, ModelCfg } from "@repo/db";
 
@@ -76,6 +77,33 @@ export const conversationRouter = router({
         { $set: { [`messages.${input.index}.variants`]: input.variants } },
       );
       return { ok: true };
+    }),
+
+  // fork the conversation up to (and including) one message into a brand-new chat.
+  // copies persisted message subdocs as-is, so regenerate variants come along too.
+  branch: protectedProcedure
+    .input(z.object({ id: z.string(), upToIndex: z.number().int().min(0) }))
+    .mutation(async ({ ctx, input }) => {
+      await connectDB();
+      const src = await ConversationModel.findOne({
+        _id: input.id,
+        userId: ctx.userId,
+      }).lean<{
+        title: string;
+        modelId: string;
+        provider: string;
+        messages?: unknown[];
+      }>();
+      if (!src) throw new TRPCError({ code: "NOT_FOUND" });
+      const messages = (src.messages ?? []).slice(0, input.upToIndex + 1);
+      const c = await ConversationModel.create({
+        userId: ctx.userId,
+        title: src.title,
+        modelId: src.modelId,
+        provider: src.provider,
+        messages,
+      });
+      return { id: c.id as string };
     }),
 
   rename: protectedProcedure

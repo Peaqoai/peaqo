@@ -53,6 +53,7 @@ import {
     RefreshCwIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    GitBranchPlusIcon,
 } from "lucide-react";
 import {
     PromptInput,
@@ -144,6 +145,7 @@ function MessageMetaBar({
   branchCount = 0,
   branchIndex = 0,
   onBranch,
+  onBranchChat,
 }: {
   meta: ChatMeta;
   text: string;
@@ -152,6 +154,7 @@ function MessageMetaBar({
   branchCount?: number;
   branchIndex?: number;
   onBranch?: (active: number) => void;
+  onBranchChat?: () => void;
 }) {
   const [vote, setVote] = useState<"up" | "down" | null>(meta.feedback ?? null);
   const cast = (v: "up" | "down") => {
@@ -195,6 +198,11 @@ function MessageMetaBar({
         {onRegenerate && (
           <MessageAction tooltip="Regenerate" onClick={onRegenerate}>
             <RefreshCwIcon size={14} />
+          </MessageAction>
+        )}
+        {onBranchChat && (
+          <MessageAction tooltip="Branch in new chat" onClick={onBranchChat}>
+            <GitBranchPlusIcon size={14} />
           </MessageAction>
         )}
         <MessageAction
@@ -313,6 +321,7 @@ function Thread({
   const createConv = trpc.conversation.create.useMutation();
   const feedbackMut = trpc.conversation.feedback.useMutation();
   const variantsMut = trpc.conversation.setVariants.useMutation();
+  const branchMut = trpc.conversation.branch.useMutation();
   const [convId, setConvId] = useState(initialId);
   const [modelId, setModelId] = useState(initialModelId);
   const [text, setText] = useState("");
@@ -394,6 +403,17 @@ function Thread({
         j === index ? { ...m, parts: v.parts, metadata: v.metadata } : m,
       ),
     );
+  }
+
+  // ponytail: forks from persisted DB state, not the in-memory active variant.
+  // If a non-last regenerate variant is shown, the fork uses the stored version.
+  function handleBranch(index: number) {
+    if (!convId) return;
+    requireAuth(async () => {
+      const r = await branchMut.mutateAsync({ id: convId, upToIndex: index });
+      utils.conversation.list.invalidate();
+      window.open(`/chat/${r.id}`, "_blank");
+    });
   }
 
   function handleSubmit(message: PromptInputMessage) {
@@ -534,6 +554,7 @@ function Thread({
                   branchCount={branches[i]?.variants.length ?? 0}
                   branchIndex={branches[i]?.active ?? 0}
                   onBranch={(active) => goToBranch(i, active)}
+                  onBranchChat={convId ? () => handleBranch(i) : undefined}
                   onVote={
                     convId
                       ? (value) =>
