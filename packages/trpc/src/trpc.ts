@@ -1,11 +1,11 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import { getSession } from "@repo/auth";
 
 export type Context = { userId: string | null };
 
 export async function createTRPCContext(opts: { req: Request }): Promise<Context> {
-  // ponytail: session wired in Phase 3; null for now
-  void opts;
-  return { userId: null };
+  const s = await getSession(opts.req);
+  return { userId: s?.userId ?? null };
 }
 
 const t = initTRPC.context<Context>().create();
