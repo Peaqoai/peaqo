@@ -1,4 +1,5 @@
 import { z } from "zod";
+import mongoose from "mongoose";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { connectDB, ConversationModel } from "@repo/db";
@@ -13,6 +14,42 @@ export const conversationRouter = router({
       .sort({ updatedAt: -1 })
       .lean();
   }),
+
+  // paginated + searchable feed for the /chat-history page (useInfiniteQuery).
+  // cursor is an offset; nextCursor is null when the last page is reached.
+  listPaged: protectedProcedure
+    .input(
+      z.object({
+        search: z.string().trim().default(""),
+        cursor: z.number().int().min(0).default(0),
+        limit: z.number().int().min(1).max(50).default(20),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await connectDB();
+      const match: Record<string, unknown> = {
+        userId: new mongoose.Types.ObjectId(ctx.userId),
+      };
+      if (input.search) match.title = { $regex: input.search, $options: "i" };
+      const items = await ConversationModel.aggregate([
+        { $match: match },
+        { $sort: { updatedAt: -1 } },
+        { $skip: input.cursor },
+        { $limit: input.limit },
+        {
+          $project: {
+            title: 1,
+            modelId: 1,
+            updatedAt: 1,
+            messageCount: { $size: { $ifNull: ["$messages", []] } },
+            preview: { $arrayElemAt: ["$messages.content", -1] },
+          },
+        },
+      ]);
+      const nextCursor =
+        items.length === input.limit ? input.cursor + input.limit : null;
+      return { items, nextCursor };
+    }),
 
   get: protectedProcedure
     .input(z.object({ id: z.string() }))

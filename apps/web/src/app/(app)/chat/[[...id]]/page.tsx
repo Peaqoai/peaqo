@@ -492,7 +492,7 @@ function Thread({
   return (
     <div className="flex h-full flex-col">
       <Conversation className="flex-1">
-        <ConversationContent className="mx-auto max-w-2xl">
+        <ConversationContent className="mx-auto min-h-full max-w-2xl justify-start">
           {messages.map((m, i) => (
             <Message from={m.role} key={m.id}>
               <div

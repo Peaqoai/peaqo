@@ -72,7 +72,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Chats</SidebarGroupLabel>
+          <div className="flex items-center justify-between pr-1">
+            <SidebarGroupLabel>Chats</SidebarGroupLabel>
+            <Link
+              href="/chat-history"
+              className="text-muted-foreground hover:text-foreground px-2 text-xs font-medium transition-colors group-data-[collapsible=icon]:hidden"
+            >
+              See all
+            </Link>
+          </div>
           <SidebarGroupContent>
             <SidebarMenu>
               {list.data?.map((c) => (
