@@ -4,12 +4,23 @@ import { usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 
 const SECTION_TITLES: { test: RegExp; title: string }[] = [
+  { test: /^\/personas/, title: "Persona chat" },
+  { test: /^\/fiesta/, title: "Chat fiesta" },
   { test: /^\/images/, title: "Image studio" },
   { test: /^\/video/, title: "Video studio" },
   { test: /^\/music/, title: "Music studio" },
   { test: /^\/home/, title: "Home" },
   { test: /^\/chat-history/, title: "Chat history" },
 ];
+
+function Title({ children }: { children: string }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
+      <span className="text-muted-foreground/40">/</span>
+      <span className="truncate">{children}</span>
+    </span>
+  );
+}
 
 export function ChatHeaderTitle() {
   const pathname = usePathname();
@@ -20,12 +31,12 @@ export function ChatHeaderTitle() {
 
   if (chatId) {
     const title = (data as { title?: string } | null | undefined)?.title;
-    return <span className="truncate text-sm font-medium">{title || "New chat"}</span>;
+    return <Title>{title || "New chat"}</Title>;
   }
 
   const title =
     SECTION_TITLES.find((t) => t.test.test(pathname))?.title ??
     (pathname.startsWith("/chat") ? "Chat" : "");
   if (!title) return null;
-  return <span className="truncate text-sm font-medium">{title}</span>;
+  return <Title>{title}</Title>;
 }

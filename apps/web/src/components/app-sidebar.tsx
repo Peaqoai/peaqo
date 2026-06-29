@@ -13,6 +13,8 @@ import {
     Image as ImageIcon,
     Video as VideoIcon,
     Music as MusicIcon,
+    Drama as DramaIcon,
+    PartyPopper as PartyIcon,
     type LucideIcon,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -53,7 +55,8 @@ function sectionOf(pathname: string): Section {
   if (pathname.startsWith("/video")) return "video";
   if (pathname.startsWith("/music")) return "music";
   if (pathname.startsWith("/home")) return "home";
-  return "chat"; // /chat, /chat-history
+  // /chat, /chat-history, /personas, /fiesta are all "chat" modes
+  return "chat";
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -102,16 +105,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 function ContextPanel({ section }: { section: Section }) {
   if (section === "chat") return <ChatPanel />;
-  if (section === "images") return <StudioPanel kind="images" />;
-  if (section === "video") return <StudioPanel kind="video" />;
-  if (section === "music") return <StudioPanel kind="music" />;
-  return <HomePanel />;
+  if (section === "home") return <HomePanel />;
+  return <ListPanel cfg={PANELS[section]} />;
 }
 
 // ── Chat: real conversation list ──
+const CHAT_MODES: { label: string; href: string; icon: LucideIcon }[] = [
+  { label: "Normal chat", href: "/chat", icon: MessageSquare },
+  { label: "Persona chat", href: "/personas", icon: DramaIcon },
+  { label: "Chat fiesta", href: "/fiesta", icon: PartyIcon },
+];
+
+// "/chat" must not match /chat-history; the other modes match by prefix
+const modeActive = (href: string, pathname: string) =>
+  href === "/chat"
+    ? pathname === "/chat" || pathname.startsWith("/chat/")
+    : pathname.startsWith(href);
+
 function ChatPanel() {
   const router = useRouter();
   const params = useParams();
+  const pathname = usePathname();
   const activeId = Array.isArray(params.id) ? params.id[0] : undefined;
   const { data: session } = authClient.useSession();
   const utils = trpc.useUtils();
@@ -139,6 +153,25 @@ function ChatPanel() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Modes</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {CHAT_MODES.map((m) => (
+                <SidebarMenuItem key={m.href}>
+                  <SidebarMenuButton
+                    isActive={modeActive(m.href, pathname)}
+                    tooltip={m.label}
+                    render={<Link href={m.href} />}
+                  >
+                    <m.icon />
+                    <span>{m.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         <SidebarGroup>
           <div className="flex items-center justify-between pr-1">
             <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
@@ -187,7 +220,7 @@ function ChatPanel() {
 }
 
 // ── Image / Video studios: action + static recents ──
-const STUDIO = {
+const PANELS = {
   images: {
     recentLabel: "Recent Images",
     action: "New generation",
@@ -223,8 +256,8 @@ const STUDIO = {
   },
 } as const;
 
-function StudioPanel({ kind }: { kind: "images" | "video" | "music" }) {
-  const s = STUDIO[kind];
+function ListPanel({ cfg }: { cfg: (typeof PANELS)[keyof typeof PANELS] }) {
+  const s = cfg;
   const Icon = s.icon;
   return (
     <>
@@ -268,6 +301,8 @@ function HomePanel() {
   const list = trpc.conversation.list.useQuery(undefined, { enabled: !!session?.user });
   const quicks: { label: string; href: string; icon: LucideIcon }[] = [
     { label: "New chat", href: "/chat", icon: MessageSquare },
+    { label: "Persona chat", href: "/personas", icon: DramaIcon },
+    { label: "Chat fiesta", href: "/fiesta", icon: PartyIcon },
     { label: "Generate image", href: "/images", icon: ImageIcon },
     { label: "Make a video", href: "/video", icon: VideoIcon },
     { label: "Make music", href: "/music", icon: MusicIcon },
