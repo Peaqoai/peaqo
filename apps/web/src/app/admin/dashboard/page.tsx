@@ -7,8 +7,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@repo/ui/components/card";
+import { Skeleton } from "@repo/ui/components/skeleton";
 
 export default function AdminDashboardPage() {
   const stats = trpc.admin.stats.useQuery();

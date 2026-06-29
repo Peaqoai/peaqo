@@ -5,8 +5,8 @@ import Link from "next/link";
 import { MessageSquare } from "lucide-react";
 import { getModel } from "@repo/trpc/models";
 import { trpc } from "@/lib/trpc/client";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Input } from "@repo/ui/components/input";
+import { Button } from "@repo/ui/components/button";
 
 export default function ChatHistoryPage() {
   const [search, setSearch] = useState("");

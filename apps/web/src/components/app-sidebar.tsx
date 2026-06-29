@@ -25,7 +25,7 @@ import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@repo/ui/components/tooltip";
 import {
     Sidebar,
     SidebarContent,
@@ -38,7 +38,7 @@ import {
     SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from "@repo/ui/components/sidebar";
 
 type Section = "home" | "chat" | "images" | "video" | "music";
 

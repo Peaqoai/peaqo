@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Hanken_Grotesk, JetBrains_Mono, MuseoModerno } from "next/font/google";
-import { cn } from "@/lib/utils";
+import { cn } from "@repo/ui/lib/utils";
 import NextTopLoader from "nextjs-toploader";
 import { TRPCProvider } from "@/lib/trpc/provider";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@repo/ui/theme-provider";
+import { Toaster } from "@repo/ui/components/sonner";
 
 const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });

@@ -5,10 +5,10 @@ import { type ColumnDef, type PaginationState } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/data-table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@repo/ui/components/input";
+import { Button } from "@repo/ui/components/button";
+import { Badge } from "@repo/ui/components/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar";
 
 type Row = {
   _id: string;

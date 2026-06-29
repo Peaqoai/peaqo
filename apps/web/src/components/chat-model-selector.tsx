@@ -13,7 +13,7 @@ import {
   ModelSelectorLogo,
   ModelSelectorName,
   ModelSelectorTrigger,
-} from "@/components/ai-elements/model-selector";
+} from "@repo/ui/components/ai-elements/model-selector";
 
 export type ChatModel = { id: string; name: string; provider: string };
 

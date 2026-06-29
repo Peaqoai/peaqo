@@ -15,8 +15,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+} from "@repo/ui/components/table";
+import { Button } from "@repo/ui/components/button";
 
 type Props<T> = {
   columns: ColumnDef<T, unknown>[];

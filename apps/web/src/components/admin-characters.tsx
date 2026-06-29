@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/data-table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Input } from "@repo/ui/components/input";
+import { Button } from "@repo/ui/components/button";
 import {
   CharacterFormDialog,
   avatarSwatch,
@@ -151,6 +151,7 @@ export function AdminCharacters({ kind }: { kind: "persona" | "character" }) {
       },
     ],
     // modelName depends on models; remove for delete state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [kind, models, remove],
   );
 

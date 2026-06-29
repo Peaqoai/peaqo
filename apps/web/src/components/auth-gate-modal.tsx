@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useGate } from "@/lib/use-require-auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
+import { Label } from "@repo/ui/components/label";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/dialog";
 
 export function AuthGateModal() {
   const open = useGate((s) => s.open);

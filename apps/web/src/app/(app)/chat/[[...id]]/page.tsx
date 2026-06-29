@@ -12,7 +12,7 @@ import {
     Conversation,
     ConversationContent,
     ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
+} from "@repo/ui/components/ai-elements/conversation";
 import {
     Message,
     MessageAvatar,
@@ -21,26 +21,26 @@ import {
     MessageToolbar,
     MessageActions,
     MessageAction,
-} from "@/components/ai-elements/message";
-import { cn } from "@/lib/utils";
+} from "@repo/ui/components/ai-elements/message";
+import { cn } from "@repo/ui/lib/utils";
 import {
     Reasoning,
     ReasoningContent,
     ReasoningTrigger,
-} from "@/components/ai-elements/reasoning";
+} from "@repo/ui/components/ai-elements/reasoning";
 import {
     Tool,
     ToolContent,
     ToolHeader,
     ToolInput,
     ToolOutput,
-} from "@/components/ai-elements/tool";
+} from "@repo/ui/components/ai-elements/tool";
 import {
     Attachment,
     AttachmentPreview,
     AttachmentRemove,
     Attachments,
-} from "@/components/ai-elements/attachments";
+} from "@repo/ui/components/ai-elements/attachments";
 import {
     PaperclipIcon,
     GlobeIcon,
@@ -71,10 +71,10 @@ import {
     PromptInputTextarea,
     PromptInputTools,
     usePromptInputAttachments,
-} from "@/components/ai-elements/prompt-input";
+} from "@repo/ui/components/ai-elements/prompt-input";
 import { ChatModelSelector } from "@/components/chat-model-selector";
 import { PersonaSelector } from "@/components/persona-selector";
-import { Shimmer } from "@/components/ai-elements/shimmer";
+import { Shimmer } from "@repo/ui/components/ai-elements/shimmer";
 
 function AttachButton() {
   const attachments = usePromptInputAttachments();
