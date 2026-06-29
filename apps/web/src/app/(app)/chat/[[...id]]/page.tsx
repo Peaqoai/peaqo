@@ -462,7 +462,11 @@ function Thread({
           </PromptInputButton>
           <ChatModelSelector value={modelId} onChange={setModelId} models={models} />
         </PromptInputTools>
-        <PromptInputSubmit disabled={!text && status !== "streaming"} status={status} />
+        <PromptInputSubmit
+            disabled={!text && status !== "streaming"}
+            status={status}
+            className="brand-gradient border-0 text-white shadow-sm shadow-primary/30 transition-all hover:opacity-90 hover:shadow-md hover:shadow-primary/40 disabled:opacity-40 disabled:shadow-none"
+          />
       </PromptInputFooter>
     </PromptInput>
   );
@@ -470,15 +474,17 @@ function Thread({
   if (messages.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">
+        <div className="animate-in fade-in slide-in-from-bottom-4 space-y-2 text-center duration-700">
+          <h1 className="text-brand-gradient pb-1 text-4xl font-semibold tracking-tight">
             What&rsquo;s on the agenda today?
           </h1>
           <p className="text-muted-foreground">
             Ask anything across GPT, Claude, Gemini and more — attach files or search the web.
           </p>
         </div>
-        <div className="w-full max-w-2xl">{promptInput}</div>
+        <div className="animate-in fade-in slide-in-from-bottom-6 w-full max-w-2xl duration-700">
+          {promptInput}
+        </div>
       </div>
     );
   }

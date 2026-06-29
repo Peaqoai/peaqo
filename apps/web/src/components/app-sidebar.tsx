@@ -48,7 +48,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/chat" />}>
-              <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+              <div className="brand-gradient flex aspect-square size-8 items-center justify-center rounded-lg text-white shadow-sm shadow-primary/30 transition-transform duration-300 group-hover/menu-item:scale-105">
                 <Sparkles className="size-4" />
               </div>
               <span className="font-(family-name:--font-brand) text-lg font-semibold tracking-tight">
