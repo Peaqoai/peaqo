@@ -35,7 +35,7 @@ export default function AvatarsPage() {
       <div className="mx-auto max-w-5xl p-6 md:p-8">
         <CharacterManager
           kind="character"
-          title="Avatar chat"
+          title="Avatar"
           subtitle="Talk to a character who stays fully in role — or create your own."
           items={(list.data ?? []) as CharItem[]}
           models={models}

@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/user-menu";
 import {
     Tooltip,
@@ -46,9 +45,9 @@ type Section = "home" | "chat" | "images" | "video" | "music";
 const SECTIONS: { id: Section; label: string; href: string; icon: LucideIcon }[] = [
   { id: "home", label: "Home", href: "/home", icon: HomeIcon },
   { id: "chat", label: "Chat", href: "/chat", icon: MessageSquare },
-  { id: "images", label: "Image studio", href: "/images", icon: ImageIcon },
-  { id: "video", label: "Video studio", href: "/video", icon: VideoIcon },
-  { id: "music", label: "Music studio", href: "/music", icon: MusicIcon },
+  // { id: "images", label: "Image studio", href: "/images", icon: ImageIcon },
+  // { id: "video", label: "Video studio", href: "/video", icon: VideoIcon },
+  // { id: "music", label: "Music studio", href: "/music", icon: MusicIcon },
 ];
 
 function sectionOf(pathname: string): Section {
@@ -60,6 +59,40 @@ function sectionOf(pathname: string): Section {
   return "chat";
 }
 
+// the always-visible icon rail — also used standalone on the home page
+export function IconRail() {
+  const pathname = usePathname();
+  const section = sectionOf(pathname);
+  return (
+    <div className="bg-sidebar flex w-12 shrink-0 flex-col items-center gap-1 border-r py-2">
+      <Link
+        href="/home"
+        aria-label="Peaqo home"
+        className="brand-gradient mb-1 grid size-8 place-items-center rounded-lg text-white shadow-sm shadow-primary/30 transition-transform duration-300 hover:scale-105"
+      >
+        <Sparkles className="size-4" />
+      </Link>
+      {SECTIONS.map((s) => (
+        <Tooltip key={s.id}>
+          <TooltipTrigger
+            render={
+              <Link
+                href={s.href}
+                aria-label={s.label}
+                data-active={section === s.id}
+                className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground grid size-9 place-items-center rounded-lg transition-colors"
+              >
+                <s.icon className="size-5" />
+              </Link>
+            }
+          />
+          <TooltipContent side="right">{s.label}</TooltipContent>
+        </Tooltip>
+      ))}
+    </div>
+  );
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const section = sectionOf(pathname);
@@ -67,34 +100,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" className="overflow-hidden" {...props}>
       <div className="flex h-full w-full flex-row">
-        {/* ── icon rail (always visible) ── */}
-        <div className="bg-sidebar flex w-12 shrink-0 flex-col items-center gap-1 border-r py-2">
-          <Link
-            href="/home"
-            aria-label="Peaqo home"
-            className="brand-gradient mb-1 grid size-8 place-items-center rounded-lg text-white shadow-sm shadow-primary/30 transition-transform duration-300 hover:scale-105"
-          >
-            <Sparkles className="size-4" />
-          </Link>
-          {SECTIONS.map((s) => (
-            <Tooltip key={s.id}>
-              <TooltipTrigger
-                render={
-                  <Link
-                    href={s.href}
-                    aria-label={s.label}
-                    data-active={section === s.id}
-                    className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground grid size-9 place-items-center rounded-lg transition-colors"
-                  >
-                    <s.icon className="size-5" />
-                  </Link>
-                }
-              />
-              <TooltipContent side="right">{s.label}</TooltipContent>
-            </Tooltip>
-          ))}
-        </div>
-
+        <IconRail />
         {/* ── contextual panel ── */}
         <div className="flex min-w-0 flex-1 flex-col group-data-[collapsible=icon]:hidden">
           <ContextPanel section={section} />
@@ -106,16 +112,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 function ContextPanel({ section }: { section: Section }) {
   if (section === "chat") return <ChatPanel />;
-  if (section === "home") return <HomePanel />;
+  // home renders its own standalone layout (no sidebar), so it never reaches here
+  if (section === "home") return <ChatPanel />;
   return <ListPanel cfg={PANELS[section]} />;
 }
 
 // ── Chat: real conversation list ──
 const CHAT_MODES: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Chats", href: "/chat", icon: MessageSquare },
-  { label: "Persona chat", href: "/personas", icon: DramaIcon },
-  { label: "Avatar chat", href: "/avatars", icon: AvatarIcon },
-  { label: "Chat fiesta", href: "/fiesta", icon: PartyIcon },
+  { label: "Persona", href: "/personas", icon: DramaIcon },
+  { label: "Avatar", href: "/avatars", icon: AvatarIcon },
+  { label: "Fiesta", href: "/fiesta", icon: PartyIcon },
 ];
 
 // "/chat" must not match /chat-history; the other modes match by prefix
@@ -288,78 +295,6 @@ function ListPanel({ cfg }: { cfg: (typeof PANELS)[keyof typeof PANELS] }) {
                   <SidebarMenuButton tooltip={r} render={<Link href={s.href} />}>
                     <Icon />
                     <span>{r}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <UserMenu />
-      </SidebarFooter>
-    </>
-  );
-}
-
-// ── Home: quick actions + recent chats ──
-function HomePanel() {
-  const { data: session } = authClient.useSession();
-  const list = trpc.conversation.list.useQuery(undefined, { enabled: !!session?.user });
-  const quicks: { label: string; href: string; icon: LucideIcon }[] = [
-    { label: "New chat", href: "/chat", icon: MessageSquare },
-    { label: "Persona chat", href: "/personas", icon: DramaIcon },
-    { label: "Avatar chat", href: "/avatars", icon: AvatarIcon },
-    { label: "Chat fiesta", href: "/fiesta", icon: PartyIcon },
-    { label: "Generate image", href: "/images", icon: ImageIcon },
-    { label: "Make a video", href: "/video", icon: VideoIcon },
-    { label: "Make music", href: "/music", icon: MusicIcon },
-  ];
-  return (
-    <>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-1 py-1.5">
-          <span className="font-(family-name:--font-brand) text-lg font-semibold tracking-tight">
-            Peaqo
-          </span>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Quick actions</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {quicks.map((q) => (
-                <SidebarMenuItem key={q.label}>
-                  <SidebarMenuButton tooltip={q.label} render={<Link href={q.href} />}>
-                    <q.icon />
-                    <span>{q.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <div className="flex items-center justify-between pr-1">
-            <SidebarGroupLabel>Recent chats</SidebarGroupLabel>
-            <Link
-              href="/chat-history"
-              className="text-muted-foreground hover:text-foreground px-2 text-xs font-medium transition-colors"
-            >
-              See all
-            </Link>
-          </div>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {list.data?.slice(0, 6).map((c) => (
-                <SidebarMenuItem key={String(c._id)}>
-                  <SidebarMenuButton
-                    tooltip={c.title || "New chat"}
-                    render={<Link href={chatHref(c)} />}
-                  >
-                    <MessageSquare />
-                    <span>{c.title || "New chat"}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { AppSidebar } from "@/components/app-sidebar";
+import { usePathname } from "next/navigation";
+import { AppSidebar, IconRail } from "@/components/app-sidebar";
 import { ChatHeaderTitle } from "@/components/chat-header-title";
 import { AuthGateModal } from "@/components/auth-gate-modal";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +13,20 @@ import {
 } from "@/components/ui/sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  // home keeps the icon rail for navigation but drops the contextual panel
+  if (pathname.startsWith("/home")) {
+    return (
+      <TooltipProvider>
+        <div className="app-bg flex h-svh overflow-hidden">
+          <IconRail />
+          <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+        </div>
+        <AuthGateModal />
+      </TooltipProvider>
+    );
+  }
+
   return (
     <TooltipProvider>
       <SidebarProvider style={{ "--sidebar-width": "19rem" } as React.CSSProperties}>

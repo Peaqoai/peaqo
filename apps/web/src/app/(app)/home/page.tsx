@@ -4,6 +4,7 @@ import Link from "next/link";
 import { MessageSquare, ImageIcon, VideoIcon, MusicIcon, ChevronRight } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
+import { UserMenu } from "@/components/user-menu";
 
 const QUICKS = [
   {
@@ -45,6 +46,17 @@ export default function HomePage() {
 
   return (
     <div className="h-full overflow-y-auto">
+      <div className="border-border/60 bg-background/80 sticky top-0 z-10 flex h-12 items-center justify-between border-b px-4 backdrop-blur md:px-6">
+        <Link
+          href="/home"
+          className="font-(family-name:--font-brand) text-lg font-semibold tracking-tight"
+        >
+          Peaqo
+        </Link>
+        <div className="w-56">
+          <UserMenu />
+        </div>
+      </div>
       <div className="mx-auto max-w-5xl p-6 md:p-8">
         <header className="mb-7">
           <h1 className="text-3xl font-bold tracking-tight">

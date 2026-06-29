@@ -54,13 +54,16 @@ export const MessageAvatar = ({
   from,
   src,
   name,
+  emoji,
 }: {
   from: UIMessage["role"];
   src?: string;
   name?: string;
+  // avatar chats: an emoji shown when the character has no uploaded image
+  emoji?: string;
 }) => (
   <Avatar className="size-7 shrink-0 rounded-md">
-    {from === "user" && src && <AvatarImage src={src} alt={name} className="rounded-md" />}
+    {src && <AvatarImage src={src} alt={name} className="rounded-md" />}
     <AvatarFallback
       className={cn(
         "rounded-md text-[11px] font-bold",
@@ -71,6 +74,8 @@ export const MessageAvatar = ({
     >
       {from === "user" ? (
         (name ?? "?").slice(0, 2).toUpperCase()
+      ) : emoji ? (
+        <span className="text-sm">{emoji}</span>
       ) : (
         <BotIcon className="size-4" />
       )}

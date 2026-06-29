@@ -281,23 +281,6 @@ function ChatPageInner() {
     { id: routeId! },
     { enabled: !!routeId && isAuthed },
   );
-  // for a not-yet-started avatar chat, routeId is the character id — load it so
-  // the avatar can greet (client-side, before any conversation exists)
-  const charQuery = trpc.character.get.useQuery(
-    { id: routeId! },
-    { enabled: isAvatarRoute && !!routeId && isAuthed },
-  );
-
-  const loadingConv = !!routeId && isAuthed && conv.isLoading;
-  const loadingChar = isAvatarRoute && !!routeId && isAuthed && charQuery.isLoading;
-  if (loadingConv || loadingChar) {
-    return (
-      <div className="text-muted-foreground grid h-full place-items-center text-sm">
-        Loading…
-      </div>
-    );
-  }
-
   const data = conv.data as
     | {
         modelId?: string;
@@ -307,14 +290,39 @@ function ChatPageInner() {
       }
     | null
     | undefined;
+
+  // avatar character: a started conv stores its characterId; a fresh avatar
+  // route carries the character id in the URL. Load it for the greeting (before
+  // any conversation exists) and for the assistant message avatar/name.
+  const charId = isAvatarRoute
+    ? data?.characterId
+      ? String(data.characterId)
+      : routeId
+    : undefined;
+  const charQuery = trpc.character.get.useQuery(
+    { id: charId! },
+    { enabled: !!charId && isAuthed },
+  );
+  const character = charQuery.data as
+    | { name?: string; emoji?: string; avatarUrl?: string; greeting?: string }
+    | null
+    | undefined;
+
+  const loadingConv = !!routeId && isAuthed && conv.isLoading;
+  const loadingChar = !!charId && isAuthed && charQuery.isLoading;
+  if (loadingConv || loadingChar) {
+    return (
+      <div className="text-muted-foreground grid h-full place-items-center text-sm">
+        Loading…
+      </div>
+    );
+  }
   const started = !!data;
   const convId = started ? routeId : undefined;
   // new-chat presets, only when no conversation exists yet
   const newPersonaId = !started ? personaParam : undefined;
   const newCharacterId = !started && isAvatarRoute ? routeId : undefined;
-  const greeting = newCharacterId
-    ? (charQuery.data as { greeting?: string } | null | undefined)?.greeting
-    : undefined;
+  const greeting = newCharacterId ? character?.greeting : undefined;
 
   const initialMessages: UIMessage[] = started
     ? (data?.messages?.map((m, i) => ({
@@ -355,6 +363,9 @@ function ChatPageInner() {
       initialModelId={data?.modelId ?? config.defaultModelId}
       initialPersonaId={data?.personaId ? String(data.personaId) : newPersonaId}
       initialCharacterId={data?.characterId ? String(data.characterId) : newCharacterId}
+      characterName={character?.name}
+      characterEmoji={character?.emoji}
+      characterAvatarUrl={character?.avatarUrl}
       initialMessages={initialMessages}
       initialBranches={initialBranches}
     />
@@ -366,6 +377,9 @@ function Thread({
   initialModelId,
   initialPersonaId,
   initialCharacterId,
+  characterName,
+  characterEmoji,
+  characterAvatarUrl,
   initialMessages,
   initialBranches,
 }: {
@@ -373,6 +387,9 @@ function Thread({
   initialModelId: string;
   initialPersonaId?: string;
   initialCharacterId?: string;
+  characterName?: string;
+  characterEmoji?: string;
+  characterAvatarUrl?: string;
   initialMessages: UIMessage[];
   initialBranches: Record<number, { variants: Variant[]; active: number }>;
 }) {
@@ -604,8 +621,9 @@ function Thread({
               >
                 <MessageAvatar
                   from={m.role}
-                  src={meQuery.data?.avatarUrl}
-                  name={meQuery.data?.name}
+                  src={m.role === "user" ? meQuery.data?.avatarUrl : characterAvatarUrl}
+                  name={m.role === "user" ? meQuery.data?.name : characterName}
+                  emoji={m.role === "assistant" ? characterEmoji : undefined}
                 />
                 <div className="flex min-w-0 flex-col gap-2">
               <MessageContent>
@@ -677,7 +695,12 @@ function Thread({
           {status === "submitted" && (
             <Message from="assistant">
               <div className="flex w-full items-start gap-2">
-                <MessageAvatar from="assistant" />
+                <MessageAvatar
+                  from="assistant"
+                  src={characterAvatarUrl}
+                  name={characterName}
+                  emoji={characterEmoji}
+                />
                 <MessageContent>
                   <Shimmer>Thinking…</Shimmer>
                 </MessageContent>

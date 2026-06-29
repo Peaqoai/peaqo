@@ -35,7 +35,7 @@ export default function PersonasPage() {
       <div className="mx-auto max-w-5xl p-6 md:p-8">
         <CharacterManager
           kind="persona"
-          title="Persona chat"
+          title="Persona"
           subtitle="Pick a persona to style how the assistant replies — or create your own."
           items={(list.data ?? []) as CharItem[]}
           models={models}
