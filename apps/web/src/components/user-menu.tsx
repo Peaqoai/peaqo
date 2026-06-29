@@ -95,7 +95,7 @@ export function UserMenu() {
             <UserIcon className="size-4" /> Settings
           </DropdownMenuItem>
           {u?.role === "admin" && (
-            <DropdownMenuItem onClick={() => router.push("/admin/models")}>
+            <DropdownMenuItem onClick={() => router.push("/admin/dashboard")}>
               <Shield className="size-4" /> Admin
             </DropdownMenuItem>
           )}

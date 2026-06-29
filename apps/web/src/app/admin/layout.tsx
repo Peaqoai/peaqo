@@ -3,15 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { ArrowLeft, Users, Boxes, Network, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, Users, LayoutDashboard } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/models", label: "Models", icon: Boxes },
-  { href: "/admin/gateways", label: "Gateways", icon: Network },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

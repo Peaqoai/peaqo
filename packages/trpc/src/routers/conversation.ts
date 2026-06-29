@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
-import { connectDB, ConversationModel, ModelCfg } from "@repo/db";
+import { connectDB, ConversationModel } from "@repo/db";
+import { getModel } from "../models";
 
 // ownership-scoped: every query/mutation filters by userId so users can't touch others' chats
 export const conversationRouter = router({
@@ -24,13 +25,10 @@ export const conversationRouter = router({
     .input(z.object({ modelId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await connectDB();
-      const cfg = (await ModelCfg.findOne({ modelId: input.modelId }).lean()) as
-        | { provider?: string }
-        | null;
       const c = await ConversationModel.create({
         userId: ctx.userId,
         modelId: input.modelId,
-        provider: cfg?.provider ?? "openai",
+        provider: getModel(input.modelId)?.provider ?? "openai",
       });
       return { id: c.id as string };
     }),

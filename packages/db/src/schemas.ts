@@ -60,13 +60,3 @@ export const ConversationSchema = z.object({
   provider: Provider,
   messages: z.array(MessageSchema).default([]),
 });
-
-export const ModelSchema = z.object({
-  provider: Provider,
-  gatewayId: z.string(),
-  modelId: z.string().min(1),
-  displayName: z.string().min(1),
-  creditMultiplier: z.number().positive().default(1),
-  minCredits: z.number().min(0).default(1),
-  enabled: z.boolean().default(true),
-});

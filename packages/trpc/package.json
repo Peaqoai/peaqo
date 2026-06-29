@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
+    "./models": "./src/models.ts",
     "./llm/resolve": "./src/llm/resolve.ts"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "@repo/auth": "workspace:^",
     "@repo/db": "workspace:^",
     "@repo/email": "workspace:^",
+    "@repo/types": "workspace:^",
     "@trpc/server": "^11.0.0",
     "ai": "^7.0.4",
     "mongoose": "^8.5.0",

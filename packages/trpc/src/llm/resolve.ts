@@ -4,6 +4,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createVertex } from "@ai-sdk/google-vertex";
 import { createGroq } from "@ai-sdk/groq";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { streamText } from "ai";
 import { config } from "../config";
 
 // model used to auto-generate conversation titles (see config.ts)
@@ -47,6 +48,30 @@ export function webSearchTools(provider: string) {
     return { web_search: openai.tools.webSearchPreview({}) };
   }
   return undefined;
+}
+
+// providerOptions to turn on reasoning/thinking, per provider. Returns undefined
+// when the model isn't reasoning-capable (config.reasoning=false) so non-reasoning
+// models (e.g. gpt-4o) are left untouched.
+// ponytail: fixed thinking budgets; lift to per-model config if you need control.
+type ProviderOptions = NonNullable<Parameters<typeof streamText>[0]["providerOptions"]>;
+export function reasoningOptions(
+  provider: string,
+  enabled: boolean,
+): ProviderOptions | undefined {
+  if (!enabled) return undefined;
+  switch (provider) {
+    case "anthropic":
+      return { anthropic: { thinking: { type: "enabled", budgetTokens: 4000 } } };
+    case "google":
+    case "vertex":
+      return { google: { thinkingConfig: { thinkingBudget: 4000, includeThoughts: true } } };
+    case "openai":
+      // only o-series / gpt-5 reasoning models honor this; others ignore it
+      return { openai: { reasoningEffort: "medium" } };
+    default:
+      return undefined;
+  }
 }
 
 export function resolveModel(opts: {

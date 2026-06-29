@@ -22,17 +22,17 @@ afterAll(async () => {
   await mongod.stop();
 });
 
-describe("admin.gateways", () => {
+describe("admin.stats", () => {
   it("non-admin is forbidden", async () => {
     const u = await UserModel.create({ email: "u@b.com", name: "U" });
     const caller = appRouter.createCaller({ userId: u.id });
-    await expect(caller.admin.gateways.list()).rejects.toThrow();
+    await expect(caller.admin.stats()).rejects.toThrow();
   });
 
-  it("admin lists the hardcoded gateways", async () => {
+  it("admin gets platform counts", async () => {
     const caller = appRouter.createCaller({ userId: adminId });
-    const list = await caller.admin.gateways.list();
-    expect(list.length).toBeGreaterThan(0);
-    expect(list[0]).toHaveProperty("url");
+    const stats = await caller.admin.stats();
+    expect(stats).toHaveProperty("users");
+    expect(stats).toHaveProperty("chats");
   });
 });

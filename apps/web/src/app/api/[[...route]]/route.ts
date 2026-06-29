@@ -6,14 +6,15 @@ import { appRouter, createTRPCContext } from "@repo/trpc";
 import {
   resolveModel,
   webSearchTools,
+  reasoningOptions,
   canAfford,
   creditsFor,
   shouldResetCredits,
   TITLE_MODEL,
 } from "@repo/trpc/llm/resolve";
 import { getAuth, getSession } from "@repo/auth";
-import { connectDB, UserModel, ConversationModel, ModelCfg } from "@repo/db";
-import { getGateway } from "@repo/trpc/config";
+import { connectDB, UserModel, ConversationModel } from "@repo/db";
+import { getModel, getGateway } from "@repo/trpc/models";
 
 const app = new Hono().basePath("/api");
 
@@ -44,10 +45,12 @@ app.post("/chat", async (c) => {
   }
   if (!canAfford(user)) return c.json({ error: "Out of credits" }, 402);
 
-  const cfg = await ModelCfg.findOne({ modelId, enabled: true });
-  if (!cfg) return c.json({ error: "Model not available" }, 400);
+  const cfg = getModel(modelId);
+  if (!cfg || cfg.enabled === false) return c.json({ error: "Model not available" }, 400);
   const gateway = getGateway(cfg.gatewayId);
   if (!gateway) return c.json({ error: "Gateway not configured" }, 400);
+  const creditMultiplier = cfg.creditMultiplier ?? 1;
+  const minCredits = cfg.minCredits ?? 1;
 
   const model = resolveModel({
     provider: cfg.provider,
@@ -63,7 +66,9 @@ app.post("/chat", async (c) => {
   const startedAt = Date.now();
   const result = streamText({
     model,
+    system: cfg.systemPrompt,
     messages: modelMessages,
+    providerOptions: reasoningOptions(cfg.provider, cfg.reasoning ?? false),
     tools: webSearch ? webSearchTools(cfg.provider) : undefined,
     onFinish: async ({ text, usage }) => {
       let tokens = usage.totalTokens ?? 0;
@@ -72,12 +77,14 @@ app.post("/chat", async (c) => {
       let set: { title?: string } = {};
       if (conversationId && messages.length <= 1) {
         let title = userText.slice(0, 60) || "New chat";
+        const titleCfg = getModel(TITLE_MODEL) ?? cfg;
+        const titleUrl = getGateway(titleCfg.gatewayId)?.url ?? gateway.url;
         try {
           const gen = await generateText({
             model: resolveModel({
-              provider: cfg.provider,
+              provider: titleCfg.provider,
               modelId: TITLE_MODEL,
-              gatewayUrl: gateway.url,
+              gatewayUrl: titleUrl,
             }),
             prompt: `Generate a short, 3-6 word title for a chat that starts with this message. Reply with only the title, no quotes.\n\n${userText}`,
           });
@@ -89,7 +96,7 @@ app.post("/chat", async (c) => {
         }
         set = { title };
       }
-      const credits = creditsFor(tokens, cfg.creditMultiplier, cfg.minCredits);
+      const credits = creditsFor(tokens, creditMultiplier, minCredits);
       user.creditsUsed += credits;
       await user.save();
       if (conversationId) {
@@ -149,7 +156,7 @@ app.post("/chat", async (c) => {
           tokens,
           // ponytail: live value is generation-only; onFinish folds in title-gen
           // tokens and persists the authoritative credits, so post-refresh is exact.
-          credits: creditsFor(tokens, cfg.creditMultiplier, cfg.minCredits),
+          credits: creditsFor(tokens, creditMultiplier, minCredits),
           durationMs: Date.now() - startedAt,
         };
       }

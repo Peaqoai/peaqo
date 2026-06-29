@@ -296,6 +296,9 @@ importers:
       '@repo/email':
         specifier: workspace:^
         version: link:../email
+      '@repo/types':
+        specifier: workspace:^
+        version: link:../types
       '@trpc/server':
         specifier: ^11.0.0
         version: 11.18.0(typescript@5.9.2)
@@ -315,6 +318,8 @@ importers:
       vitest:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@22.20.0)(lightningcss@1.32.0)
+
+  packages/types: {}
 
   packages/typescript-config: {}
 

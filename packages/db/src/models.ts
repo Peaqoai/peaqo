@@ -59,25 +59,6 @@ const Conversation = new Schema(
   { timestamps: true },
 );
 
-const ModelCfgSchema = new Schema(
-  {
-    provider: { type: String, required: true },
-    // gateway id from config.ts (e.g. "openai"); set to make the model chat-usable
-    gatewayId: { type: String },
-    modelId: { type: String, required: true },
-    displayName: { type: String, required: true },
-    description: String,
-    inputPrice: { type: Number, default: 0 }, // USD per 1M input tokens
-    outputPrice: { type: Number, default: 0 }, // USD per 1M output tokens
-    reasoning: { type: Boolean, default: false },
-    systemPrompt: String,
-    creditMultiplier: { type: Number, default: 1 },
-    minCredits: { type: Number, default: 1 }, // floor charged per turn for this model
-    enabled: { type: Boolean, default: true },
-  },
-  { timestamps: true },
-);
-
 // ponytail: in dev, re-register on every module load so schema edits take effect
 // without a manual server restart (Mongoose caches compiled models across HMR and
 // silently drops fields the stale schema doesn't know). Cast to Model<any> — the
@@ -90,4 +71,3 @@ const register = <S>(name: string, schema: S): Model<any> => {
 export const UserModel = register("User", User);
 export const OrgModel = register("Organisation", Organisation);
 export const ConversationModel = register("Conversation", Conversation);
-export const ModelCfg = register("Model", ModelCfgSchema);
