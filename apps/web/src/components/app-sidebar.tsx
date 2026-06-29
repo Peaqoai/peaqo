@@ -112,7 +112,7 @@ function ContextPanel({ section }: { section: Section }) {
 
 // ── Chat: real conversation list ──
 const CHAT_MODES: { label: string; href: string; icon: LucideIcon }[] = [
-  { label: "Normal chat", href: "/chat", icon: MessageSquare },
+  { label: "Chats", href: "/chat", icon: MessageSquare },
   { label: "Persona chat", href: "/personas", icon: DramaIcon },
   { label: "Avatar chat", href: "/avatars", icon: AvatarIcon },
   { label: "Chat fiesta", href: "/fiesta", icon: PartyIcon },
@@ -124,11 +124,16 @@ const modeActive = (href: string, pathname: string) =>
     ? pathname === "/chat" || pathname.startsWith("/chat/")
     : pathname.startsWith(href);
 
+// avatar conversations live at /chat/avatar/<id>; everything else at /chat/<id>
+const chatHref = (c: { _id: unknown; characterId?: unknown }) =>
+  c.characterId ? `/chat/avatar/${c._id}` : `/chat/${c._id}`;
+
 function ChatPanel() {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
-  const activeId = Array.isArray(params.id) ? params.id[0] : undefined;
+  const seg = Array.isArray(params.id) ? params.id : [];
+  const activeId = seg[0] === "avatar" ? seg[1] : seg[0];
   const { data: session } = authClient.useSession();
   const utils = trpc.useUtils();
 
@@ -191,7 +196,7 @@ function ChatPanel() {
                   <SidebarMenuButton
                     isActive={String(c._id) === activeId}
                     tooltip={c.title || "New chat"}
-                    render={<Link href={`/chat/${c._id}`} />}
+                    render={<Link href={chatHref(c)} />}
                   >
                     <MessageSquare />
                     <span>{c.title || "New chat"}</span>
@@ -351,7 +356,7 @@ function HomePanel() {
                 <SidebarMenuItem key={String(c._id)}>
                   <SidebarMenuButton
                     tooltip={c.title || "New chat"}
-                    render={<Link href={`/chat/${c._id}`} />}
+                    render={<Link href={chatHref(c)} />}
                   >
                     <MessageSquare />
                     <span>{c.title || "New chat"}</span>

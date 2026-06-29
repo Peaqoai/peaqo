@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useState, useRef, Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { toast } from "sonner";
@@ -73,6 +73,7 @@ import {
     usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 import { ChatModelSelector } from "@/components/chat-model-selector";
+import { PersonaSelector } from "@/components/persona-selector";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 
 function AttachButton() {
@@ -257,13 +258,39 @@ function MessageMetaBar({
 }
 
 export default function ChatPage() {
+  // useSearchParams needs a Suspense boundary under the app router
+  return (
+    <Suspense fallback={null}>
+      <ChatPageInner />
+    </Suspense>
+  );
+}
+
+function ChatPageInner() {
   const params = useParams();
-  const id = Array.isArray(params.id) ? params.id[0] : undefined;
+  const searchParams = useSearchParams();
+  const seg = Array.isArray(params.id) ? params.id : params.id ? [params.id] : [];
+  // /chat/avatar/<x> distinguishes avatar chats; x is a conversation id once
+  // started, or a character id for a not-yet-started avatar chat
+  const isAvatarRoute = seg[0] === "avatar";
+  const routeId = isAvatarRoute ? seg[1] : seg[0];
+  const personaParam = searchParams.get("persona") ?? undefined;
   const { isAuthed } = useRequireAuth();
 
-  const conv = trpc.conversation.get.useQuery({ id: id! }, { enabled: !!id && isAuthed });
+  const conv = trpc.conversation.get.useQuery(
+    { id: routeId! },
+    { enabled: !!routeId && isAuthed },
+  );
+  // for a not-yet-started avatar chat, routeId is the character id — load it so
+  // the avatar can greet (client-side, before any conversation exists)
+  const charQuery = trpc.character.get.useQuery(
+    { id: routeId! },
+    { enabled: isAvatarRoute && !!routeId && isAuthed },
+  );
 
-  if (id && isAuthed && conv.isLoading) {
+  const loadingConv = !!routeId && isAuthed && conv.isLoading;
+  const loadingChar = isAvatarRoute && !!routeId && isAuthed && charQuery.isLoading;
+  if (loadingConv || loadingChar) {
     return (
       <div className="text-muted-foreground grid h-full place-items-center text-sm">
         Loading…
@@ -280,22 +307,35 @@ export default function ChatPage() {
       }
     | null
     | undefined;
-  const initialMessages: UIMessage[] =
-    data?.messages?.map((m, i) => ({
-      id: `${id}-${i}`,
-      role: m.role as "user" | "assistant",
-      parts: [{ type: "text" as const, text: m.content }],
-      ...(m.role === "assistant" && m.model
-        ? {
-            metadata: {
-              model: m.model,
-              credits: m.credits,
-              durationMs: m.durationMs,
-              feedback: m.feedback,
-            },
-          }
-        : {}),
-    })) ?? [];
+  const started = !!data;
+  const convId = started ? routeId : undefined;
+  // new-chat presets, only when no conversation exists yet
+  const newPersonaId = !started ? personaParam : undefined;
+  const newCharacterId = !started && isAvatarRoute ? routeId : undefined;
+  const greeting = newCharacterId
+    ? (charQuery.data as { greeting?: string } | null | undefined)?.greeting
+    : undefined;
+
+  const initialMessages: UIMessage[] = started
+    ? (data?.messages?.map((m, i) => ({
+        id: `${convId}-${i}`,
+        role: m.role as "user" | "assistant",
+        parts: [{ type: "text" as const, text: m.content }],
+        ...(m.role === "assistant" && m.model
+          ? {
+              metadata: {
+                model: m.model,
+                credits: m.credits,
+                durationMs: m.durationMs,
+                feedback: m.feedback,
+              },
+            }
+          : {}),
+      })) ?? [])
+    : // not started: an avatar greets first (client-side only, no toolbar/meta)
+      greeting
+      ? [{ id: "greeting", role: "assistant" as const, parts: [{ type: "text" as const, text: greeting }] }]
+      : [];
 
   // rebuild regenerate branches (active = the stored/shown one, i.e. last)
   const initialBranches: Record<number, { variants: Variant[]; active: number }> = {};
@@ -310,11 +350,11 @@ export default function ChatPage() {
 
   return (
     <Thread
-      key={id ?? "new"}
-      initialId={id}
+      key={convId ?? newCharacterId ?? newPersonaId ?? "new"}
+      initialId={convId}
       initialModelId={data?.modelId ?? config.defaultModelId}
-      initialPersonaId={data?.personaId ? String(data.personaId) : undefined}
-      initialCharacterId={data?.characterId ? String(data.characterId) : undefined}
+      initialPersonaId={data?.personaId ? String(data.personaId) : newPersonaId}
+      initialCharacterId={data?.characterId ? String(data.characterId) : newCharacterId}
       initialMessages={initialMessages}
       initialBranches={initialBranches}
     />
@@ -459,7 +499,9 @@ function Thread({
         const r = await createConv.mutateAsync({ modelId, personaId, characterId });
         cid = r.id;
         setConvId(cid);
-        window.history.replaceState(null, "", `/chat/${cid}`);
+        // avatar chats keep their distinct URL so they read as avatar, not normal
+        const url = characterId ? `/chat/avatar/${cid}` : `/chat/${cid}`;
+        window.history.replaceState(null, "", url);
         utils.conversation.list.invalidate();
       }
       sendMessage(
@@ -495,20 +537,11 @@ function Thread({
           </PromptInputButton>
           <ChatModelSelector value={modelId} onChange={setModelId} models={models} />
           {!characterId && personas.length > 0 && (
-            <select
-              aria-label="Persona"
-              value={personaId ?? ""}
-              onChange={(e) => setPersonaId(e.target.value || undefined)}
-              className="border-input bg-background text-muted-foreground hover:text-foreground h-8 max-w-[10rem] truncate rounded-md border px-2 text-xs"
-            >
-              <option value="">No persona</option>
-              {personas.map((p: { _id: string; name: string; emoji?: string }) => (
-                <option key={String(p._id)} value={String(p._id)}>
-                  {p.emoji ? `${p.emoji} ` : ""}
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            <PersonaSelector
+              value={personaId}
+              onChange={setPersonaId}
+              personas={personas as { _id: string; name: string; emoji?: string }[]}
+            />
           )}
         </PromptInputTools>
         <PromptInputSubmit

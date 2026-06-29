@@ -10,7 +10,7 @@ export const conversationRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     await connectDB();
     return ConversationModel.find({ userId: ctx.userId })
-      .select("title modelId updatedAt")
+      .select("title modelId characterId updatedAt")
       .sort({ updatedAt: -1 })
       .lean();
   }),
@@ -71,19 +71,18 @@ export const conversationRouter = router({
       const owned = { $or: [{ scope: "global" }, { ownerId: ctx.userId }] };
       let modelId = input.modelId;
       let title = "New chat";
-      const messages: { role: string; content: string; model?: string }[] = [];
 
-      // avatar chat: adopt the character's preset model and let it greet first
+      // avatar chat: adopt the character's preset model. The greeting is shown
+      // and sent by the client (so it survives onFinish's history rebuild), not
+      // seeded here.
       if (input.characterId) {
         const ch = await CharacterModel.findOne({ _id: input.characterId, ...owned }).lean<{
           defaultModelId?: string;
           name?: string;
-          greeting?: string;
         }>();
         if (ch) {
           modelId = ch.defaultModelId ?? modelId;
           if (ch.name) title = `Chat with ${ch.name}`;
-          if (ch.greeting) messages.push({ role: "assistant", content: ch.greeting, model: ch.name });
         }
       } else if (input.personaId) {
         // persona just presets the model; the chat is otherwise normal
@@ -101,7 +100,6 @@ export const conversationRouter = router({
         personaId: input.personaId,
         characterId: input.characterId,
         title,
-        messages,
       });
       return { id: c.id as string };
     }),

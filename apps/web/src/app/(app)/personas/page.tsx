@@ -18,17 +18,16 @@ export default function PersonasPage() {
   const remove = trpc.persona.remove.useMutation({
     onSuccess: () => utils.persona.list.invalidate(),
   });
-  const createConv = trpc.conversation.create.useMutation();
 
   async function onSave(v: CharValues, id?: string) {
     if (id) await update.mutateAsync({ id, ...v });
     else await create.mutateAsync(v);
     utils.persona.list.invalidate();
   }
-  async function onStartChat(it: CharItem) {
-    const r = await createConv.mutateAsync({ personaId: it._id });
-    utils.conversation.list.invalidate();
-    router.push(`/chat/${r.id}`);
+  // don't create a conversation yet — open /chat carrying the persona; it's
+  // persisted only once the user sends their first message
+  function onStartChat(it: CharItem) {
+    router.push(`/chat?persona=${it._id}`);
   }
 
   return (

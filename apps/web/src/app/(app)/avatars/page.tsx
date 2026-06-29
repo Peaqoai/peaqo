@@ -18,17 +18,16 @@ export default function AvatarsPage() {
   const remove = trpc.character.remove.useMutation({
     onSuccess: () => utils.character.list.invalidate(),
   });
-  const createConv = trpc.conversation.create.useMutation();
 
   async function onSave(v: CharValues, id?: string) {
     if (id) await update.mutateAsync({ id, ...v });
     else await create.mutateAsync(v);
     utils.character.list.invalidate();
   }
-  async function onStartChat(it: CharItem) {
-    const r = await createConv.mutateAsync({ characterId: it._id });
-    utils.conversation.list.invalidate();
-    router.push(`/chat/${r.id}`);
+  // avatar chats get a distinct /chat/avatar/<id> URL; the conversation isn't
+  // created until the user sends their first message
+  function onStartChat(it: CharItem) {
+    router.push(`/chat/avatar/${it._id}`);
   }
 
   return (
