@@ -59,9 +59,16 @@ export const MessageAvatar = ({
   src?: string;
   name?: string;
 }) => (
-  <Avatar className="size-7 shrink-0">
-    {from === "user" && src && <AvatarImage src={src} alt={name} />}
-    <AvatarFallback>
+  <Avatar className="size-7 shrink-0 rounded-md">
+    {from === "user" && src && <AvatarImage src={src} alt={name} className="rounded-md" />}
+    <AvatarFallback
+      className={cn(
+        "rounded-md text-[11px] font-bold",
+        from === "user"
+          ? "bg-muted text-muted-foreground"
+          : "brand-gradient text-white"
+      )}
+    >
       {from === "user" ? (
         (name ?? "?").slice(0, 2).toUpperCase()
       ) : (
@@ -81,7 +88,7 @@ export const MessageContent = ({
   <div
     className={cn(
       "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
-      "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
+      "group-[.is-user]:ml-auto group-[.is-user]:rounded-2xl group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
       "group-[.is-assistant]:text-foreground",
       className
     )}

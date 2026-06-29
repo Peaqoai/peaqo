@@ -1,24 +1,15 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
-import { Geist, MuseoModerno } from "next/font/google";
+import { Hanken_Grotesk, JetBrains_Mono, MuseoModerno } from "next/font/google";
 import { cn } from "@/lib/utils";
 import NextTopLoader from "nextjs-toploader";
 import { TRPCProvider } from "@/lib/trpc/provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-const museoModerno = MuseoModerno({subsets:['latin'],variable:'--font-brand'});
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-});
+const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const museoModerno = MuseoModerno({ subsets: ["latin"], variable: "--font-brand" });
 
 export const metadata: Metadata = {
   title: {
@@ -49,8 +40,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable, museoModerno.variable)} suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={cn("font-sans", sans.variable, mono.variable, museoModerno.variable)} suppressHydrationWarning>
+      <body>
         <ThemeProvider>
           <NextTopLoader color="oklch(0.6 0.2 255)" showSpinner={false} />
           <TRPCProvider>{children}</TRPCProvider>

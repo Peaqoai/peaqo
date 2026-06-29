@@ -54,6 +54,11 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
     GitBranchPlusIcon,
+    SparklesIcon,
+    PenLineIcon,
+    TerminalIcon,
+    ZapIcon,
+    FileTextIcon,
 } from "lucide-react";
 import {
     PromptInput,
@@ -93,6 +98,13 @@ function AttachmentsDisplay() {
     </Attachments>
   );
 }
+
+const STARTERS = [
+  { t: "Draft a product update", d: "Announce our new feature to users", Icon: PenLineIcon },
+  { t: "Explain a codebase", d: "Walk me through this auth flow step by step", Icon: TerminalIcon },
+  { t: "Plan a launch", d: "8-week go-to-market plan for a developer tool", Icon: ZapIcon },
+  { t: "Summarize a paper", d: "Give me a TL;DR of the latest research", Icon: FileTextIcon },
+];
 
 type ChatMeta = {
   model?: string;
@@ -474,7 +486,10 @@ function Thread({
   if (messages.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
-        <div className="animate-in fade-in slide-in-from-bottom-4 space-y-2 text-center duration-700">
+        <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col items-center space-y-2 text-center duration-700">
+          <div className="brand-gradient mb-1 grid size-14 place-items-center rounded-2xl text-white shadow-md shadow-primary/30">
+            <SparklesIcon className="size-7" />
+          </div>
           <h1 className="text-brand-gradient pb-1 text-4xl font-semibold tracking-tight">
             What&rsquo;s on the agenda today?
           </h1>
@@ -484,6 +499,22 @@ function Thread({
         </div>
         <div className="animate-in fade-in slide-in-from-bottom-6 w-full max-w-2xl duration-700">
           {promptInput}
+        </div>
+        <div className="animate-in fade-in slide-in-from-bottom-8 grid w-full max-w-2xl grid-cols-1 gap-3 duration-700 sm:grid-cols-2">
+          {STARTERS.map((s) => (
+            <button
+              key={s.t}
+              type="button"
+              onClick={() => setText(s.d)}
+              className="bg-card hover:border-primary/40 group rounded-[var(--radius)] border p-4 text-left transition-all hover:-translate-y-0.5"
+            >
+              <span className="bg-primary/10 text-primary mb-2 grid size-8 place-items-center rounded-lg">
+                <s.Icon className="size-4" />
+              </span>
+              <div className="text-sm font-semibold">{s.t}</div>
+              <div className="text-muted-foreground mt-0.5 text-xs leading-snug">{s.d}</div>
+            </button>
+          ))}
         </div>
       </div>
     );
