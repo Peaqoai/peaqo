@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import { connectDB, resetConnectionCache, UserModel } from "@repo/db";
+import { connectDB, resetConnectionCache, UserModel } from "@peaqo/db";
 import { appRouter } from "../router";
 
 let mongod: MongoMemoryServer;

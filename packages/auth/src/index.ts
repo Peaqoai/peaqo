@@ -38,7 +38,7 @@ export function getAuth() {
     },
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
-        const { sendVerificationEmail } = await import("@repo/email");
+        const { sendVerificationEmail } = await import("@peaqo/email");
         await sendVerificationEmail({
           to: user.email,
           name: user.name ?? "there",

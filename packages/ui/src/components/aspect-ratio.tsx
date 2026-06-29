@@ -1,4 +1,4 @@
-import { cn } from "@repo/ui/lib/utils"
+import { cn } from "@peaqo/ui/lib/utils"
 
 function AspectRatio({
   ratio,

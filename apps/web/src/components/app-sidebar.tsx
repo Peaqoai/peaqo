@@ -25,7 +25,7 @@ import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@repo/ui/components/tooltip";
+} from "@peaqo/ui/components/tooltip";
 import {
     Sidebar,
     SidebarContent,
@@ -38,7 +38,7 @@ import {
     SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@repo/ui/components/sidebar";
+} from "@peaqo/ui/components/sidebar";
 
 type Section = "home" | "chat" | "images" | "video" | "music";
 

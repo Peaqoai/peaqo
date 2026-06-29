@@ -5,12 +5,12 @@ import { usePathname } from "next/navigation";
 import { AppSidebar, IconRail } from "@/components/app-sidebar";
 import { ChatHeaderTitle } from "@/components/chat-header-title";
 import { AuthGateModal } from "@/components/auth-gate-modal";
-import { TooltipProvider } from "@repo/ui/components/tooltip";
+import { TooltipProvider } from "@peaqo/ui/components/tooltip";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@repo/ui/components/sidebar";
+} from "@peaqo/ui/components/sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

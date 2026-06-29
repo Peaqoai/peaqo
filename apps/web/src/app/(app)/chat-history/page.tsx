@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MessageSquare } from "lucide-react";
-import { getModel } from "@repo/trpc/models";
+import { getModel } from "@peaqo/trpc/models";
 import { trpc } from "@/lib/trpc/client";
-import { Input } from "@repo/ui/components/input";
-import { Button } from "@repo/ui/components/button";
+import { Input } from "@peaqo/ui/components/input";
+import { Button } from "@peaqo/ui/components/button";
 
 export default function ChatHistoryPage() {
   const [search, setSearch] = useState("");

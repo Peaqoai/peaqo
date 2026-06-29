@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
-import { connectDB, UserModel } from "@repo/db";
+import { connectDB, UserModel } from "@peaqo/db";
 import { shouldResetCredits } from "../llm/resolve";
 
 export type MeResult = {

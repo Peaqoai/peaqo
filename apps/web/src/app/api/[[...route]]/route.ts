@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import { trpcServer } from "@hono/trpc-server";
 import { streamText, generateText, convertToModelMessages, type UIMessage } from "ai";
-import { appRouter, createTRPCContext } from "@repo/trpc";
+import { appRouter, createTRPCContext } from "@peaqo/trpc";
 import {
   resolveModel,
   webSearchTools,
@@ -11,16 +11,16 @@ import {
   creditsFor,
   shouldResetCredits,
   TITLE_MODEL,
-} from "@repo/trpc/llm/resolve";
-import { getAuth, getSession } from "@repo/auth";
-import { connectDB, UserModel, ConversationModel, PersonaModel, CharacterModel } from "@repo/db";
-import { getModel, getGateway } from "@repo/trpc/models";
+} from "@peaqo/trpc/llm/resolve";
+import { getAuth, getSession } from "@peaqo/auth";
+import { connectDB, UserModel, ConversationModel, PersonaModel, CharacterModel } from "@peaqo/db";
+import { getModel, getGateway } from "@peaqo/trpc/models";
 import {
   buildPersonaSystem,
   buildCharacterSystem,
   type PersonaLike,
   type CharacterLike,
-} from "@repo/trpc/character-prompt";
+} from "@peaqo/trpc/character-prompt";
 
 const app = new Hono().basePath("/api");
 

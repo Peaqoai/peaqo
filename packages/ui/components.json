@@ -13,11 +13,11 @@
   "iconLibrary": "lucide",
   "rtl": false,
   "aliases": {
-    "components": "@repo/ui/components",
-    "utils": "@repo/ui/lib/utils",
-    "ui": "@repo/ui/components",
-    "lib": "@repo/ui/lib",
-    "hooks": "@repo/ui/hooks"
+    "components": "@peaqo/ui/components",
+    "utils": "@peaqo/ui/lib/utils",
+    "ui": "@peaqo/ui/components",
+    "lib": "@peaqo/ui/lib",
+    "hooks": "@peaqo/ui/hooks"
   },
   "menuColor": "default",
   "menuAccent": "subtle",

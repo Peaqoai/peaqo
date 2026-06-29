@@ -11,9 +11,9 @@ import {
   DownloadIcon,
   ImageIcon,
 } from "lucide-react";
-import { Button } from "@repo/ui/components/button";
-import { Textarea } from "@repo/ui/components/textarea";
-import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@peaqo/ui/components/button";
+import { Textarea } from "@peaqo/ui/components/textarea";
+import { Badge } from "@peaqo/ui/components/badge";
 import { Placeholder, Field, SectionTitle, Seg } from "@/components/studio-ui";
 
 const VIDEO_MODELS = [

@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@peaqo/web",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -14,10 +14,10 @@
     "@ai-sdk/react": "^4.0.5",
     "@hono/trpc-server": "^0.4.2",
     "@hookform/resolvers": "^5.4.0",
-    "@repo/auth": "workspace:^",
-    "@repo/db": "workspace:^",
-    "@repo/trpc": "workspace:^",
-    "@repo/ui": "workspace:*",
+    "@peaqo/auth": "workspace:^",
+    "@peaqo/db": "workspace:^",
+    "@peaqo/trpc": "workspace:^",
+    "@peaqo/ui": "workspace:*",
     "@tailwindcss/postcss": "^4.3.1",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.21.3",
@@ -42,8 +42,8 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@peaqo/eslint-config": "workspace:*",
+    "@peaqo/typescript-config": "workspace:*",
     "@tanstack/react-query-devtools": "^5.101.2",
     "@types/node": "^22.15.3",
     "@types/react": "19.2.2",

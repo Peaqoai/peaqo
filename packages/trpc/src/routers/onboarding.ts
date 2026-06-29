@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc";
-import { connectDB, UserModel, OrgModel, Plan } from "@repo/db";
+import { connectDB, UserModel, OrgModel, Plan } from "@peaqo/db";
 
 const PLAN_CREDITS: Record<string, number> = {
   free: 10,
@@ -54,7 +54,7 @@ export const onboardingRouter = router({
       // ponytail: best-effort invite emails; don't fail onboarding if they error
       const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
       try {
-        const { sendTeamInvite } = await import("@repo/email");
+        const { sendTeamInvite } = await import("@peaqo/email");
         await Promise.all(
           input.invites.map((to) =>
             sendTeamInvite({

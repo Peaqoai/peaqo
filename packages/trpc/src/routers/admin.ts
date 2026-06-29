@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../trpc";
-import { connectDB, ConversationModel, UserModel, PersonaModel, CharacterModel } from "@repo/db";
+import { connectDB, ConversationModel, UserModel, PersonaModel, CharacterModel } from "@peaqo/db";
 import { adminCharacterRouter, personaShape, characterShape } from "./character";
 
 // platform-wide counts for the admin dashboard

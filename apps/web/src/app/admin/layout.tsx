@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ArrowLeft, Users, LayoutDashboard, Drama, UserSquare } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
-import { cn } from "@repo/ui/lib/utils";
+import { cn } from "@peaqo/ui/lib/utils";
 
 const NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },

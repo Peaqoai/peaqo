@@ -2,7 +2,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
-import { connectDB, ConversationModel, PersonaModel, CharacterModel } from "@repo/db";
+import { connectDB, ConversationModel, PersonaModel, CharacterModel } from "@peaqo/db";
 import { getModel } from "../models";
 
 // ownership-scoped: every query/mutation filters by userId so users can't touch others' chats

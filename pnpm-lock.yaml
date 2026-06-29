@@ -29,16 +29,16 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.80.0(react@19.2.7))
-      '@repo/auth':
+      '@peaqo/auth':
         specifier: workspace:^
         version: link:../../packages/auth
-      '@repo/db':
+      '@peaqo/db':
         specifier: workspace:^
         version: link:../../packages/db
-      '@repo/trpc':
+      '@peaqo/trpc':
         specifier: workspace:^
         version: link:../../packages/trpc
-      '@repo/ui':
+      '@peaqo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tailwindcss/postcss':
@@ -108,10 +108,10 @@ importers:
         specifier: ^5.0.14
         version: 5.0.14(@types/react@19.2.2)(immer@11.1.8)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
     devDependencies:
-      '@repo/eslint-config':
+      '@peaqo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@repo/typescript-config':
+      '@peaqo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@tanstack/react-query-devtools':
@@ -135,7 +135,7 @@ importers:
 
   packages/auth:
     dependencies:
-      '@repo/email':
+      '@peaqo/email':
         specifier: workspace:^
         version: link:../email
       better-auth:
@@ -236,16 +236,16 @@ importers:
       '@openrouter/ai-sdk-provider':
         specifier: ^2.10.0
         version: 2.10.0(ai@7.0.4(zod@4.4.3))(zod@4.4.3)
-      '@repo/auth':
+      '@peaqo/auth':
         specifier: workspace:^
         version: link:../auth
-      '@repo/db':
+      '@peaqo/db':
         specifier: workspace:^
         version: link:../db
-      '@repo/email':
+      '@peaqo/email':
         specifier: workspace:^
         version: link:../email
-      '@repo/types':
+      '@peaqo/types':
         specifier: workspace:^
         version: link:../types
       '@trpc/server':
@@ -359,10 +359,10 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
-      '@repo/eslint-config':
+      '@peaqo/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
+      '@peaqo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':

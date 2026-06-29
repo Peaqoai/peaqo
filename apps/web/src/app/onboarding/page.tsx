@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
-import { Button } from "@repo/ui/components/button";
-import { Input } from "@repo/ui/components/input";
-import { Label } from "@repo/ui/components/label";
+import { Button } from "@peaqo/ui/components/button";
+import { Input } from "@peaqo/ui/components/input";
+import { Label } from "@peaqo/ui/components/label";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/card";
+} from "@peaqo/ui/components/card";
 
 type Plan = "free" | "pro" | "ultimate" | "team";
 

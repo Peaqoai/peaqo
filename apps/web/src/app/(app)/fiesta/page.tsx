@@ -5,8 +5,8 @@
 // fan-out to providers yet.
 import { useState } from "react";
 import { ArrowUpIcon } from "lucide-react";
-import { Textarea } from "@repo/ui/components/textarea";
-import { cn } from "@repo/ui/lib/utils";
+import { Textarea } from "@peaqo/ui/components/textarea";
+import { cn } from "@peaqo/ui/lib/utils";
 
 const PARTICIPANTS = [
   { id: "claude", name: "Claude", short: "A", color: "#d97757" },

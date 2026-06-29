@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "@repo/ui/components/button";
-import { Field } from "@repo/ui/components/field";
+import { Button } from "@peaqo/ui/components/button";
+import { Field } from "@peaqo/ui/components/field";
 
 // ponytail: Apple button ships but stays a no-op until APPLE_* creds + Service ID
 // are configured server-side; Google works with standard OAuth creds.

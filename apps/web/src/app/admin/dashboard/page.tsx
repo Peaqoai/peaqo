@@ -7,8 +7,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/card";
-import { Skeleton } from "@repo/ui/components/skeleton";
+} from "@peaqo/ui/components/card";
+import { Skeleton } from "@peaqo/ui/components/skeleton";
 
 export default function AdminDashboardPage() {
   const stats = trpc.admin.stats.useQuery();

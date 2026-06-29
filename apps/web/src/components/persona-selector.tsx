@@ -8,7 +8,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "@repo/ui/components/dropdown-menu";
+} from "@peaqo/ui/components/dropdown-menu";
 
 export type PersonaOption = { _id: string; name: string; emoji?: string };
 

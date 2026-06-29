@@ -5,8 +5,8 @@
 // own persona.* / character.* hooks.
 import { useState } from "react";
 import { Plus, Pencil, Trash2, MessageSquare } from "lucide-react";
-import { Button } from "@repo/ui/components/button";
-import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@peaqo/ui/components/button";
+import { Badge } from "@peaqo/ui/components/badge";
 import {
   CharacterFormDialog,
   type CharItem,

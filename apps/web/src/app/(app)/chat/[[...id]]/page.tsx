@@ -7,12 +7,12 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { toast } from "sonner";
 import { useRequireAuth } from "@/lib/use-require-auth";
 import { trpc } from "@/lib/trpc/client";
-import { config } from "@repo/trpc/config";
+import { config } from "@peaqo/trpc/config";
 import {
     Conversation,
     ConversationContent,
     ConversationScrollButton,
-} from "@repo/ui/components/ai-elements/conversation";
+} from "@peaqo/ui/components/ai-elements/conversation";
 import {
     Message,
     MessageAvatar,
@@ -21,26 +21,26 @@ import {
     MessageToolbar,
     MessageActions,
     MessageAction,
-} from "@repo/ui/components/ai-elements/message";
-import { cn } from "@repo/ui/lib/utils";
+} from "@peaqo/ui/components/ai-elements/message";
+import { cn } from "@peaqo/ui/lib/utils";
 import {
     Reasoning,
     ReasoningContent,
     ReasoningTrigger,
-} from "@repo/ui/components/ai-elements/reasoning";
+} from "@peaqo/ui/components/ai-elements/reasoning";
 import {
     Tool,
     ToolContent,
     ToolHeader,
     ToolInput,
     ToolOutput,
-} from "@repo/ui/components/ai-elements/tool";
+} from "@peaqo/ui/components/ai-elements/tool";
 import {
     Attachment,
     AttachmentPreview,
     AttachmentRemove,
     Attachments,
-} from "@repo/ui/components/ai-elements/attachments";
+} from "@peaqo/ui/components/ai-elements/attachments";
 import {
     PaperclipIcon,
     GlobeIcon,
@@ -71,10 +71,10 @@ import {
     PromptInputTextarea,
     PromptInputTools,
     usePromptInputAttachments,
-} from "@repo/ui/components/ai-elements/prompt-input";
+} from "@peaqo/ui/components/ai-elements/prompt-input";
 import { ChatModelSelector } from "@/components/chat-model-selector";
 import { PersonaSelector } from "@/components/persona-selector";
-import { Shimmer } from "@repo/ui/components/ai-elements/shimmer";
+import { Shimmer } from "@peaqo/ui/components/ai-elements/shimmer";
 
 function AttachButton() {
   const attachments = usePromptInputAttachments();

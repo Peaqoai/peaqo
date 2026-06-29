@@ -6,15 +6,15 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { SocialButtons } from "@/components/social-buttons";
-import { Button } from "@repo/ui/components/button";
-import { Input } from "@repo/ui/components/input";
+import { Button } from "@peaqo/ui/components/button";
+import { Input } from "@peaqo/ui/components/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/card";
+} from "@peaqo/ui/components/card";
 import {
   Field,
   FieldDescription,
@@ -22,7 +22,7 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from "@repo/ui/components/field";
+} from "@peaqo/ui/components/field";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),

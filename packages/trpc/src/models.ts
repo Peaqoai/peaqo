@@ -1,6 +1,6 @@
 // THE ONLY PLACE MODELS LIVE. Add a model: append a row to `models`.
 // Delete one: remove its row. Types are in types.ts, app config in config.ts.
-import type { Gateway, ModelDef } from "@repo/types";
+import type { Gateway, ModelDef } from "@peaqo/types";
 
 // Gateways map an id -> API base URL + the env var holding its key.
 export const gateways: Gateway[] = [

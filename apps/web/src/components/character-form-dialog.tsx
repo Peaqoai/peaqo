@@ -4,17 +4,17 @@
 // it can be driven from a gallery card, a table row, or a "New" button.
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@repo/ui/components/button";
-import { Input } from "@repo/ui/components/input";
-import { Textarea } from "@repo/ui/components/textarea";
-import { Label } from "@repo/ui/components/label";
+import { Button } from "@peaqo/ui/components/button";
+import { Input } from "@peaqo/ui/components/input";
+import { Textarea } from "@peaqo/ui/components/textarea";
+import { Label } from "@peaqo/ui/components/label";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@repo/ui/components/dialog";
+} from "@peaqo/ui/components/dialog";
 
 export type CharItem = {
   _id: string;

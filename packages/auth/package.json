@@ -1,5 +1,5 @@
 {
-  "name": "@repo/auth",
+  "name": "@peaqo/auth",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",
@@ -8,7 +8,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@repo/email": "workspace:^",
+    "@peaqo/email": "workspace:^",
     "better-auth": "^1.6.22",
     "mongodb": "^6.21.0"
   }

@@ -15,8 +15,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@repo/ui/components/table";
-import { Button } from "@repo/ui/components/button";
+} from "@peaqo/ui/components/table";
+import { Button } from "@peaqo/ui/components/button";
 
 type Props<T> = {
   columns: ColumnDef<T, unknown>[];

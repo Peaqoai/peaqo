@@ -1,11 +1,11 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
+  "extends": "@peaqo/typescript-config/react-library.json",
   "compilerOptions": {
     "outDir": "dist",
     "strictNullChecks": true,
     "baseUrl": ".",
     "paths": {
-      "@repo/ui/*": ["./src/*"]
+      "@peaqo/ui/*": ["./src/*"]
     }
   },
   "include": ["src"],

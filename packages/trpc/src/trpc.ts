@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { getSession } from "@repo/auth";
-import { connectDB, UserModel } from "@repo/db";
+import { getSession } from "@peaqo/auth";
+import { connectDB, UserModel } from "@peaqo/db";
 
 export type Context = { userId: string | null };
 

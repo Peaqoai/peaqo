@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/data-table";
-import { Input } from "@repo/ui/components/input";
-import { Button } from "@repo/ui/components/button";
+import { Input } from "@peaqo/ui/components/input";
+import { Button } from "@peaqo/ui/components/button";
 import {
   CharacterFormDialog,
   avatarSwatch,

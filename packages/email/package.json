@@ -1,5 +1,5 @@
 {
-  "name": "@repo/email",
+  "name": "@peaqo/email",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.ts",

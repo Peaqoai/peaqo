@@ -2,7 +2,7 @@ import { z } from "zod";
 import mongoose, { type Model } from "mongoose";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, adminProcedure } from "../trpc";
-import { connectDB, PersonaModel, CharacterModel } from "@repo/db";
+import { connectDB, PersonaModel, CharacterModel } from "@peaqo/db";
 
 // Persona and Character are distinct collections with the same CRUD shape, so
 // the input shapes and routers are generated from a shared factory.
