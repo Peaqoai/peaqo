@@ -5,6 +5,7 @@ import { userRouter } from "./routers/user";
 import { modelsRouter } from "./routers/models";
 import { adminRouter } from "./routers/admin";
 import { conversationRouter } from "./routers/conversation";
+import { personaRouter, characterRouter } from "./routers/character";
 
 export const appRouter = router({
   health: publicProcedure
@@ -15,6 +16,8 @@ export const appRouter = router({
   models: modelsRouter,
   admin: adminRouter,
   conversation: conversationRouter,
+  persona: personaRouter,
+  character: characterRouter,
 });
 
 export type AppRouter = typeof appRouter;

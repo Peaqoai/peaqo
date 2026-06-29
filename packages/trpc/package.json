@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
     "./models": "./src/models.ts",
+    "./character-prompt": "./src/character-prompt.ts",
     "./llm/resolve": "./src/llm/resolve.ts"
   },
   "dependencies": {

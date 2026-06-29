@@ -2,7 +2,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
-import { connectDB, ConversationModel } from "@repo/db";
+import { connectDB, ConversationModel, PersonaModel, CharacterModel } from "@repo/db";
 import { getModel } from "../models";
 
 // ownership-scoped: every query/mutation filters by userId so users can't touch others' chats
@@ -59,13 +59,49 @@ export const conversationRouter = router({
     }),
 
   create: protectedProcedure
-    .input(z.object({ modelId: z.string() }))
+    .input(
+      z.object({
+        modelId: z.string().optional(),
+        personaId: z.string().optional(),
+        characterId: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       await connectDB();
+      const owned = { $or: [{ scope: "global" }, { ownerId: ctx.userId }] };
+      let modelId = input.modelId;
+      let title = "New chat";
+      const messages: { role: string; content: string; model?: string }[] = [];
+
+      // avatar chat: adopt the character's preset model and let it greet first
+      if (input.characterId) {
+        const ch = await CharacterModel.findOne({ _id: input.characterId, ...owned }).lean<{
+          defaultModelId?: string;
+          name?: string;
+          greeting?: string;
+        }>();
+        if (ch) {
+          modelId = ch.defaultModelId ?? modelId;
+          if (ch.name) title = `Chat with ${ch.name}`;
+          if (ch.greeting) messages.push({ role: "assistant", content: ch.greeting, model: ch.name });
+        }
+      } else if (input.personaId) {
+        // persona just presets the model; the chat is otherwise normal
+        const p = await PersonaModel.findOne({ _id: input.personaId, ...owned }).lean<{
+          defaultModelId?: string;
+        }>();
+        if (p) modelId = p.defaultModelId ?? modelId;
+      }
+
+      modelId = modelId ?? "gpt-4o-mini";
       const c = await ConversationModel.create({
         userId: ctx.userId,
-        modelId: input.modelId,
-        provider: getModel(input.modelId)?.provider ?? "openai",
+        modelId,
+        provider: getModel(modelId)?.provider ?? "openai",
+        personaId: input.personaId,
+        characterId: input.characterId,
+        title,
+        messages,
       });
       return { id: c.id as string };
     }),

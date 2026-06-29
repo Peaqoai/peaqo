@@ -13,8 +13,14 @@ import {
   TITLE_MODEL,
 } from "@repo/trpc/llm/resolve";
 import { getAuth, getSession } from "@repo/auth";
-import { connectDB, UserModel, ConversationModel } from "@repo/db";
+import { connectDB, UserModel, ConversationModel, PersonaModel, CharacterModel } from "@repo/db";
 import { getModel, getGateway } from "@repo/trpc/models";
+import {
+  buildPersonaSystem,
+  buildCharacterSystem,
+  type PersonaLike,
+  type CharacterLike,
+} from "@repo/trpc/character-prompt";
 
 const app = new Hono().basePath("/api");
 
@@ -30,12 +36,15 @@ app.post("/chat", async (c) => {
   if (!session) return c.json({ error: "Unauthorized" }, 401); // guest -> client opens auth modal
 
   await connectDB();
-  const { modelId, messages, conversationId, webSearch } = (await c.req.json()) as {
-    modelId: string;
-    messages: UIMessage[];
-    conversationId?: string;
-    webSearch?: boolean;
-  };
+  const { modelId, messages, conversationId, webSearch, personaId, characterId } =
+    (await c.req.json()) as {
+      modelId: string;
+      messages: UIMessage[];
+      conversationId?: string;
+      webSearch?: boolean;
+      personaId?: string;
+      characterId?: string;
+    };
 
   const user = await UserModel.findById(session.userId);
   if (!user) return c.json({ error: "Unauthorized" }, 401);
@@ -58,15 +67,32 @@ app.post("/chat", async (c) => {
     gatewayUrl: gateway.url,
   });
 
+  // persona or character system prompt overrides the model default. Both are
+  // ownership-scoped (global or owned by caller). A character (avatar chat)
+  // wins if somehow both are set, since it's the more immersive mode.
+  const owned = { $or: [{ scope: "global" }, { ownerId: session.userId }] };
+  let system = cfg.systemPrompt;
+  if (characterId) {
+    const ch = await CharacterModel.findOne({ _id: characterId, ...owned }).lean<CharacterLike | null>();
+    if (ch) system = buildCharacterSystem(ch);
+  } else if (personaId) {
+    const p = await PersonaModel.findOne({ _id: personaId, ...owned }).lean<PersonaLike | null>();
+    if (p) system = buildPersonaSystem(p);
+  }
+
   const textOf = (m?: UIMessage) =>
     m?.parts?.map((p) => ("text" in p ? p.text : "")).join("") ?? "";
   const userText = textOf(messages[messages.length - 1]);
 
   const modelMessages = await convertToModelMessages(messages);
+  // an avatar's seeded greeting makes the history start with an assistant turn,
+  // which Anthropic/Gemini reject (first turn must be user). It's display-only
+  // flavor, so drop any leading assistant turns before the model sees them.
+  while (modelMessages[0]?.role === "assistant") modelMessages.shift();
   const startedAt = Date.now();
   const result = streamText({
     model,
-    system: cfg.systemPrompt,
+    system,
     messages: modelMessages,
     providerOptions: reasoningOptions(cfg.provider, cfg.reasoning ?? false),
     tools: webSearch ? webSearchTools(cfg.provider) : undefined,

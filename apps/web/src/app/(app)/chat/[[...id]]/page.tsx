@@ -274,6 +274,8 @@ export default function ChatPage() {
   const data = conv.data as
     | {
         modelId?: string;
+        personaId?: string;
+        characterId?: string;
         messages?: ({ role: string; content: string; variants?: StoredVariant[] } & ChatMeta)[];
       }
     | null
@@ -311,6 +313,8 @@ export default function ChatPage() {
       key={id ?? "new"}
       initialId={id}
       initialModelId={data?.modelId ?? config.defaultModelId}
+      initialPersonaId={data?.personaId ? String(data.personaId) : undefined}
+      initialCharacterId={data?.characterId ? String(data.characterId) : undefined}
       initialMessages={initialMessages}
       initialBranches={initialBranches}
     />
@@ -320,11 +324,15 @@ export default function ChatPage() {
 function Thread({
   initialId,
   initialModelId,
+  initialPersonaId,
+  initialCharacterId,
   initialMessages,
   initialBranches,
 }: {
   initialId?: string;
   initialModelId: string;
+  initialPersonaId?: string;
+  initialCharacterId?: string;
   initialMessages: UIMessage[];
   initialBranches: Record<number, { variants: Variant[]; active: number }>;
 }) {
@@ -336,8 +344,18 @@ function Thread({
   const branchMut = trpc.conversation.branch.useMutation();
   const [convId, setConvId] = useState(initialId);
   const [modelId, setModelId] = useState(initialModelId);
+  const [personaId, setPersonaId] = useState(initialPersonaId);
+  // characterId (avatar chat) is fixed by the conversation, not switchable here
+  const characterId = initialCharacterId;
   const [text, setText] = useState("");
   const [webSearch, setWebSearch] = useState(false);
+
+  // personas shape how the assistant replies; picked here or from /personas.
+  // ponytail: a mid-chat switch only changes this turn's system prompt — it's
+  // persisted to the conversation at create time, so reload uses the original.
+  // Hidden during an avatar chat (the character owns the system prompt there).
+  const personasQuery = trpc.persona.list.useQuery(undefined, { enabled: !characterId });
+  const personas = personasQuery.data ?? [];
 
   const meQuery = trpc.user.getMe.useQuery();
   const modelsQuery = trpc.models.listEnabled.useQuery();
@@ -402,7 +420,10 @@ function Thread({
       };
     });
     regenIndexRef.current = index;
-    regenerate({ messageId, body: { modelId, conversationId: convId, webSearch } });
+    regenerate({
+      messageId,
+      body: { modelId, conversationId: convId, webSearch, personaId, characterId },
+    });
   }
 
   function goToBranch(index: number, active: number) {
@@ -435,7 +456,7 @@ function Thread({
     requireAuth(async () => {
       let cid = convId;
       if (!cid) {
-        const r = await createConv.mutateAsync({ modelId });
+        const r = await createConv.mutateAsync({ modelId, personaId, characterId });
         cid = r.id;
         setConvId(cid);
         window.history.replaceState(null, "", `/chat/${cid}`);
@@ -443,7 +464,7 @@ function Thread({
       }
       sendMessage(
         { text: message.text || "Sent with attachments", files: message.files },
-        { body: { modelId, conversationId: cid, webSearch } },
+        { body: { modelId, conversationId: cid, webSearch, personaId, characterId } },
       );
       setText("");
     });
@@ -473,6 +494,22 @@ function Thread({
             <span>Search</span>
           </PromptInputButton>
           <ChatModelSelector value={modelId} onChange={setModelId} models={models} />
+          {!characterId && personas.length > 0 && (
+            <select
+              aria-label="Persona"
+              value={personaId ?? ""}
+              onChange={(e) => setPersonaId(e.target.value || undefined)}
+              className="border-input bg-background text-muted-foreground hover:text-foreground h-8 max-w-[10rem] truncate rounded-md border px-2 text-xs"
+            >
+              <option value="">No persona</option>
+              {personas.map((p: { _id: string; name: string; emoji?: string }) => (
+                <option key={String(p._id)} value={String(p._id)}>
+                  {p.emoji ? `${p.emoji} ` : ""}
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
         </PromptInputTools>
         <PromptInputSubmit
             disabled={!text && status !== "streaming"}

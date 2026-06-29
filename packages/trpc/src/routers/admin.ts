@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, adminProcedure } from "../trpc";
-import { connectDB, ConversationModel, UserModel } from "@repo/db";
+import { connectDB, ConversationModel, UserModel, PersonaModel, CharacterModel } from "@repo/db";
+import { adminCharacterRouter, personaShape, characterShape } from "./character";
 
 // platform-wide counts for the admin dashboard
 const stats = adminProcedure.query(async () => {
@@ -62,4 +63,8 @@ const users = router({
     }),
 });
 
-export const adminRouter = router({ users, stats });
+// global persona / character CRUD (each writes scope:"global" to its collection)
+const personas = adminCharacterRouter(PersonaModel, personaShape);
+const characters = adminCharacterRouter(CharacterModel, characterShape);
+
+export const adminRouter = router({ users, stats, personas, characters });

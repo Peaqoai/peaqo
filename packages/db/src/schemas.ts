@@ -53,6 +53,28 @@ export const MessageSchema = z.object({
     .optional(),
 });
 
+export const Scope = z.enum(["global", "private"]);
+
+// shared fields between a Persona (reply-style preset) and a Character (avatar)
+const characterFields = {
+  name: z.string().min(1).max(60),
+  emoji: z.string().max(8).optional(),
+  tagline: z.string().max(120).optional(),
+  tone: z.string().max(300).optional(),
+  traits: z.array(z.string().max(40)).max(8).default([]),
+  description: z.string().max(8000).optional(),
+  defaultModelId: z.string().min(1),
+  hue: z.number().min(0).max(360).default(250),
+  scope: Scope.default("private"),
+};
+
+export const PersonaSchema = z.object(characterFields);
+export const CharacterSchema = z.object({
+  ...characterFields,
+  avatarUrl: z.string().startsWith("data:image/").max(700_000).optional(),
+  greeting: z.string().max(1000).optional(),
+});
+
 export const ConversationSchema = z.object({
   userId: z.string(),
   title: z.string().default("New chat"),

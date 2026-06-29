@@ -14,6 +14,7 @@ import {
     Video as VideoIcon,
     Music as MusicIcon,
     Drama as DramaIcon,
+    UserSquare as AvatarIcon,
     PartyPopper as PartyIcon,
     type LucideIcon,
 } from "lucide-react";
@@ -55,7 +56,7 @@ function sectionOf(pathname: string): Section {
   if (pathname.startsWith("/video")) return "video";
   if (pathname.startsWith("/music")) return "music";
   if (pathname.startsWith("/home")) return "home";
-  // /chat, /chat-history, /personas, /fiesta are all "chat" modes
+  // /chat, /chat-history, /personas, /avatars, /fiesta are all "chat" modes
   return "chat";
 }
 
@@ -113,6 +114,7 @@ function ContextPanel({ section }: { section: Section }) {
 const CHAT_MODES: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Normal chat", href: "/chat", icon: MessageSquare },
   { label: "Persona chat", href: "/personas", icon: DramaIcon },
+  { label: "Avatar chat", href: "/avatars", icon: AvatarIcon },
   { label: "Chat fiesta", href: "/fiesta", icon: PartyIcon },
 ];
 
@@ -302,6 +304,7 @@ function HomePanel() {
   const quicks: { label: string; href: string; icon: LucideIcon }[] = [
     { label: "New chat", href: "/chat", icon: MessageSquare },
     { label: "Persona chat", href: "/personas", icon: DramaIcon },
+    { label: "Avatar chat", href: "/avatars", icon: AvatarIcon },
     { label: "Chat fiesta", href: "/fiesta", icon: PartyIcon },
     { label: "Generate image", href: "/images", icon: ImageIcon },
     { label: "Make a video", href: "/video", icon: VideoIcon },

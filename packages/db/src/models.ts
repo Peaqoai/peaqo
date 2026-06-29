@@ -54,7 +54,42 @@ const Conversation = new Schema(
     title: { type: String, default: "New chat" },
     modelId: { type: String, required: true },
     provider: { type: String, required: true },
+    // a normal chat styled by a Persona (reply-style preset)…
+    personaId: { type: Schema.Types.ObjectId, ref: "Persona" },
+    // …or an in-character chat with a Character (the avatar you talk to)
+    characterId: { type: Schema.Types.ObjectId, ref: "Character" },
     messages: [Message],
+  },
+  { timestamps: true },
+);
+
+// Persona and Character are DISTINCT concepts but share most fields, so the
+// common shape lives here. scope "global" = admin-made & everyone sees it;
+// "private" = user-made & owner-only (ownerId set).
+const characterFields = {
+  name: { type: String, required: true },
+  emoji: { type: String },
+  tagline: { type: String },
+  tone: { type: String },
+  traits: [{ type: String }],
+  description: { type: String },
+  defaultModelId: { type: String, required: true },
+  hue: { type: Number, default: 250 },
+  scope: { type: String, enum: ["global", "private"], default: "private" },
+  ownerId: { type: Schema.Types.ObjectId, ref: "User" },
+};
+
+// Persona — a reply-style preset applied on the normal /chat. description holds
+// role + background knowledge.
+const Persona = new Schema({ ...characterFields }, { timestamps: true });
+
+// Character — an avatar you talk *to*, in-character. description holds
+// personality + backstory; greeting is spoken first; avatarUrl is its picture.
+const Character = new Schema(
+  {
+    ...characterFields,
+    avatarUrl: { type: String }, // data-url
+    greeting: { type: String },
   },
   { timestamps: true },
 );
@@ -71,3 +106,5 @@ const register = <S>(name: string, schema: S): Model<any> => {
 export const UserModel = register("User", User);
 export const OrgModel = register("Organisation", Organisation);
 export const ConversationModel = register("Conversation", Conversation);
+export const PersonaModel = register("Persona", Persona);
+export const CharacterModel = register("Character", Character);
