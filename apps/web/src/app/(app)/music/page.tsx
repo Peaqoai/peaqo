@@ -83,11 +83,14 @@ function Waveform({ className }: { className?: string }) {
 }
 
 export default function MusicStudio() {
-  const [model, setModel] = useState("suno-v4");
-  const [mood, setMood] = useState<Mood>("Lo-fi");
-  const [dur, setDur] = useState(30);
-  const [instrumental, setInstrumental] = useState(false);
-  const [prompt, setPrompt] = useState("");
+  // the generation form — these five fields feed generate() together
+  const [form, setForm] = useState<{
+    model: string;
+    mood: Mood;
+    dur: number;
+    instrumental: boolean;
+    prompt: string;
+  }>({ model: "suno-v4", mood: "Lo-fi", dur: 30, instrumental: false, prompt: "" });
   const [tracks, setTracks] = useState<Track[]>(INITIAL);
   const [selId, setSelId] = useState<string>("t1");
 
@@ -95,13 +98,13 @@ export default function MusicStudio() {
 
   function generate() {
     const p =
-      prompt.trim() || "Warm lo-fi hip-hop with soft Rhodes piano and a steady boom-bap beat";
+      form.prompt.trim() || "Warm lo-fi hip-hop with soft Rhodes piano and a steady boom-bap beat";
     const id = "t" + Date.now();
     setTracks((t) => [
-      { id, prompt: p, model, mood, dur: `0:${String(dur).padStart(2, "0")}`, status: "rendering", progress: 0 },
+      { id, prompt: p, model: form.model, mood: form.mood, dur: `0:${String(form.dur).padStart(2, "0")}`, status: "rendering", progress: 0 },
       ...t,
     ]);
-    setPrompt("");
+    setForm((f) => ({ ...f, prompt: "" }));
     setSelId(id);
     let pr = 0;
     const timer = setInterval(() => {
@@ -125,35 +128,35 @@ export default function MusicStudio() {
         <Field label="Prompt">
           <Textarea
             placeholder="Describe the track — genre, instruments, mood, tempo…"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            value={form.prompt}
+            onChange={(e) => setForm((f) => ({ ...f, prompt: e.target.value }))}
             className="min-h-24 resize-y"
           />
         </Field>
         <Field label="Model">
           <Seg
             wrap
-            value={model}
-            onChange={setModel}
+            value={form.model}
+            onChange={(v) => setForm((f) => ({ ...f, model: v }))}
             options={MUSIC_MODELS.map((m) => ({ value: m.id, label: m.name, title: m.note }))}
           />
         </Field>
         <Field label="Mood">
           <Seg
             wrap
-            value={mood}
-            onChange={setMood}
+            value={form.mood}
+            onChange={(v) => setForm((f) => ({ ...f, mood: v }))}
             options={MOODS.map((m) => ({ value: m, label: m }))}
           />
         </Field>
-        <Field label={`Duration · ${dur}s`}>
+        <Field label={`Duration · ${form.dur}s`}>
           <input
             type="range"
             min={10}
             max={120}
             step={5}
-            value={dur}
-            onChange={(e) => setDur(+e.target.value)}
+            value={form.dur}
+            onChange={(e) => setForm((f) => ({ ...f, dur: +e.target.value }))}
             style={{ accentColor: "var(--primary)" }}
           />
         </Field>
@@ -161,8 +164,8 @@ export default function MusicStudio() {
           <span className="text-muted-foreground font-medium">Instrumental only</span>
           <input
             type="checkbox"
-            checked={instrumental}
-            onChange={(e) => setInstrumental(e.target.checked)}
+            checked={form.instrumental}
+            onChange={(e) => setForm((f) => ({ ...f, instrumental: e.target.checked }))}
             style={{ accentColor: "var(--primary)" }}
             className="size-4"
           />

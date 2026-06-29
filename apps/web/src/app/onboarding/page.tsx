@@ -25,29 +25,34 @@ const PLANS: { id: Plan; name: string; price: string; credits: string; team: boo
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [name, setName] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [plan, setPlan] = useState<Plan>("free");
-  const [orgName, setOrgName] = useState("");
-  const [invites, setInvites] = useState("");
+  // all wizard fields in one object; setField updates a single key
+  const [form, setForm] = useState<{
+    name: string;
+    avatarUrl: string;
+    plan: Plan;
+    orgName: string;
+    invites: string;
+  }>({ name: "", avatarUrl: "", plan: "free", orgName: "", invites: "" });
+  const setField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
 
   const completeProfile = trpc.onboarding.completeProfile.useMutation();
   const selectPlan = trpc.onboarding.selectPlan.useMutation();
   const setupTeam = trpc.onboarding.setupTeam.useMutation();
   const finish = trpc.onboarding.finish.useMutation();
 
-  const hasTeam = PLANS.find((p) => p.id === plan)?.team ?? false;
+  const hasTeam = PLANS.find((p) => p.id === form.plan)?.team ?? false;
 
   async function submitProfile() {
     await completeProfile.mutateAsync({
-      name,
-      avatarUrl: avatarUrl || undefined,
+      name: form.name,
+      avatarUrl: form.avatarUrl || undefined,
     });
     setStep(2);
   }
 
   async function submitPlan() {
-    await selectPlan.mutateAsync({ plan });
+    await selectPlan.mutateAsync({ plan: form.plan });
     if (hasTeam) setStep(3);
     else {
       await finish.mutateAsync();
@@ -58,8 +63,8 @@ export default function OnboardingPage() {
   async function submitTeam(skip: boolean) {
     if (!skip) {
       await setupTeam.mutateAsync({
-        orgName,
-        invites: invites
+        orgName: form.orgName,
+        invites: form.invites
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
@@ -82,17 +87,17 @@ export default function OnboardingPage() {
             <>
               <div className="grid gap-2">
                 <Label htmlFor="name">Display name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input id="name" value={form.name} onChange={(e) => setField("name", e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="avatar">Avatar URL (optional)</Label>
                 <Input
                   id="avatar"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  value={form.avatarUrl}
+                  onChange={(e) => setField("avatarUrl", e.target.value)}
                 />
               </div>
-              <Button onClick={submitProfile} disabled={!name || completeProfile.isPending}>
+              <Button onClick={submitProfile} disabled={!form.name || completeProfile.isPending}>
                 Continue
               </Button>
             </>
@@ -105,9 +110,9 @@ export default function OnboardingPage() {
                   <button
                     key={p.id}
                     type="button"
-                    onClick={() => setPlan(p.id)}
+                    onClick={() => setField("plan", p.id)}
                     className={`rounded-lg border p-3 text-left ${
-                      plan === p.id ? "border-primary ring-2 ring-primary/30" : "border-border"
+                      form.plan === p.id ? "border-primary ring-2 ring-primary/30" : "border-border"
                     }`}
                   >
                     <div className="flex justify-between font-medium">
@@ -131,14 +136,14 @@ export default function OnboardingPage() {
             <>
               <div className="grid gap-2">
                 <Label htmlFor="org">Organisation name</Label>
-                <Input id="org" value={orgName} onChange={(e) => setOrgName(e.target.value)} />
+                <Input id="org" value={form.orgName} onChange={(e) => setField("orgName", e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="invites">Invite members (comma-separated emails)</Label>
                 <Input
                   id="invites"
-                  value={invites}
-                  onChange={(e) => setInvites(e.target.value)}
+                  value={form.invites}
+                  onChange={(e) => setField("invites", e.target.value)}
                   placeholder="a@x.com, b@y.com"
                 />
               </div>
@@ -154,7 +159,7 @@ export default function OnboardingPage() {
                 <Button
                   className="flex-1"
                   onClick={() => submitTeam(false)}
-                  disabled={!orgName || setupTeam.isPending}
+                  disabled={!form.orgName || setupTeam.isPending}
                 >
                   Create team
                 </Button>

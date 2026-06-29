@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, Suspense } from "react";
+import { useState, useRef, Suspense, type ReactNode } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
@@ -372,6 +372,86 @@ function ChatPageInner() {
   );
 }
 
+// Hero shown before the first message — brand title + the composer + starter cards.
+function EmptyState({
+  promptInput,
+  onPickStarter,
+}: {
+  promptInput: ReactNode;
+  onPickStarter: (draft: string) => void;
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
+      <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col items-center space-y-2 text-center duration-700">
+        <div className="brand-gradient mb-1 grid size-14 place-items-center rounded-2xl text-white shadow-md shadow-primary/30">
+          <SparklesIcon className="size-7" />
+        </div>
+        <h1 className="text-brand-gradient pb-1 text-4xl font-semibold tracking-tight">
+          What&rsquo;s on the agenda today?
+        </h1>
+        <p className="text-muted-foreground">
+          Ask anything across GPT, Claude, Gemini and more — attach files or search the web.
+        </p>
+      </div>
+      <div className="animate-in fade-in slide-in-from-bottom-6 w-full max-w-2xl duration-700">
+        {promptInput}
+      </div>
+      <div className="animate-in fade-in slide-in-from-bottom-8 grid w-full max-w-2xl grid-cols-1 gap-3 duration-700 sm:grid-cols-2">
+        {STARTERS.map((s) => (
+          <button
+            key={s.t}
+            type="button"
+            onClick={() => onPickStarter(s.d)}
+            className="bg-card hover:border-primary/40 group rounded-[var(--radius)] border p-4 text-left transition-all hover:-translate-y-0.5"
+          >
+            <span className="bg-primary/10 text-primary mb-2 grid size-8 place-items-center rounded-lg">
+              <s.Icon className="size-4" />
+            </span>
+            <div className="text-sm font-semibold">{s.t}</div>
+            <div className="text-muted-foreground mt-0.5 text-xs leading-snug">{s.d}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// One message part: assistant text, reasoning, an inline image, or a tool call.
+function MessagePart({ part }: { part: UIMessage["parts"][number] }) {
+  if (part.type === "text") return <MessageResponse>{part.text}</MessageResponse>;
+  if (part.type === "reasoning")
+    return (
+      <Reasoning isStreaming={part.state === "streaming"}>
+        <ReasoningTrigger />
+        <ReasoningContent>{part.text}</ReasoningContent>
+      </Reasoning>
+    );
+  if (part.type === "file" && part.mediaType?.startsWith("image/"))
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={part.url} alt={part.filename ?? "attachment"} className="max-w-xs rounded-lg" />
+    );
+  if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
+    const tp = part as {
+      type: string;
+      state: "input-streaming" | "input-available" | "output-available" | "output-error";
+      input?: unknown;
+      output?: unknown;
+      errorText?: string;
+    };
+    return (
+      <Tool>
+        <ToolHeader type={tp.type as `tool-${string}`} state={tp.state} />
+        <ToolContent>
+          <ToolInput input={tp.input} />
+          <ToolOutput output={tp.output} errorText={tp.errorText} />
+        </ToolContent>
+      </Tool>
+    );
+  }
+  return null;
+}
+
 function Thread({
   initialId,
   initialModelId,
@@ -400,12 +480,17 @@ function Thread({
   const variantsMut = trpc.conversation.setVariants.useMutation();
   const branchMut = trpc.conversation.branch.useMutation();
   const [convId, setConvId] = useState(initialId);
-  const [modelId, setModelId] = useState(initialModelId);
-  const [personaId, setPersonaId] = useState(initialPersonaId);
   // characterId (avatar chat) is fixed by the conversation, not switchable here
   const characterId = initialCharacterId;
-  const [text, setText] = useState("");
-  const [webSearch, setWebSearch] = useState(false);
+  // composer settings — model, persona, the draft text and the web-search toggle
+  // all describe the message about to be sent, so they live in one object
+  const [composer, setComposer] = useState<{
+    modelId: string;
+    personaId?: string;
+    text: string;
+    webSearch: boolean;
+  }>({ modelId: initialModelId, personaId: initialPersonaId, text: "", webSearch: false });
+  const { modelId, personaId, text, webSearch } = composer;
 
   // personas shape how the assistant replies; picked here or from /personas.
   // ponytail: a mid-chat switch only changes this turn's system prompt — it's
@@ -525,7 +610,7 @@ function Thread({
         { text: message.text || "Sent with attachments", files: message.files },
         { body: { modelId, conversationId: cid, webSearch, personaId, characterId } },
       );
-      setText("");
+      setComposer((c) => ({ ...c, text: "" }));
     });
   }
 
@@ -537,7 +622,7 @@ function Thread({
       <PromptInputBody>
         <PromptInputTextarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => setComposer((c) => ({ ...c, text: e.target.value }))}
           placeholder="Ask anything…"
         />
       </PromptInputBody>
@@ -547,16 +632,20 @@ function Thread({
           <PromptInputButton
             tooltip={{ content: "Search the web", shortcut: "⌘K" }}
             variant={webSearch ? "default" : "ghost"}
-            onClick={() => setWebSearch((v) => !v)}
+            onClick={() => setComposer((c) => ({ ...c, webSearch: !c.webSearch }))}
           >
             <GlobeIcon size={16} />
             <span>Search</span>
           </PromptInputButton>
-          <ChatModelSelector value={modelId} onChange={setModelId} models={models} />
+          <ChatModelSelector
+            value={modelId}
+            onChange={(id) => setComposer((c) => ({ ...c, modelId: id }))}
+            models={models}
+          />
           {!characterId && personas.length > 0 && (
             <PersonaSelector
               value={personaId}
-              onChange={setPersonaId}
+              onChange={(pid) => setComposer((c) => ({ ...c, personaId: pid }))}
               personas={personas as { _id: string; name: string; emoji?: string }[]}
             />
           )}
@@ -572,38 +661,10 @@ function Thread({
 
   if (messages.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
-        <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col items-center space-y-2 text-center duration-700">
-          <div className="brand-gradient mb-1 grid size-14 place-items-center rounded-2xl text-white shadow-md shadow-primary/30">
-            <SparklesIcon className="size-7" />
-          </div>
-          <h1 className="text-brand-gradient pb-1 text-4xl font-semibold tracking-tight">
-            What&rsquo;s on the agenda today?
-          </h1>
-          <p className="text-muted-foreground">
-            Ask anything across GPT, Claude, Gemini and more — attach files or search the web.
-          </p>
-        </div>
-        <div className="animate-in fade-in slide-in-from-bottom-6 w-full max-w-2xl duration-700">
-          {promptInput}
-        </div>
-        <div className="animate-in fade-in slide-in-from-bottom-8 grid w-full max-w-2xl grid-cols-1 gap-3 duration-700 sm:grid-cols-2">
-          {STARTERS.map((s) => (
-            <button
-              key={s.t}
-              type="button"
-              onClick={() => setText(s.d)}
-              className="bg-card hover:border-primary/40 group rounded-[var(--radius)] border p-4 text-left transition-all hover:-translate-y-0.5"
-            >
-              <span className="bg-primary/10 text-primary mb-2 grid size-8 place-items-center rounded-lg">
-                <s.Icon className="size-4" />
-              </span>
-              <div className="text-sm font-semibold">{s.t}</div>
-              <div className="text-muted-foreground mt-0.5 text-xs leading-snug">{s.d}</div>
-            </button>
-          ))}
-        </div>
-      </div>
+      <EmptyState
+        promptInput={promptInput}
+        onPickStarter={(d) => setComposer((c) => ({ ...c, text: d }))}
+      />
     );
   }
 
@@ -627,47 +688,9 @@ function Thread({
                 />
                 <div className="flex min-w-0 flex-col gap-2">
               <MessageContent>
-                {m.parts.map((part, i) => {
-                  const key = `${m.id}-${i}`;
-                  if (part.type === "text")
-                    return <MessageResponse key={key}>{part.text}</MessageResponse>;
-                  if (part.type === "reasoning")
-                    return (
-                      <Reasoning key={key} isStreaming={part.state === "streaming"}>
-                        <ReasoningTrigger />
-                        <ReasoningContent>{part.text}</ReasoningContent>
-                      </Reasoning>
-                    );
-                  if (part.type === "file" && part.mediaType?.startsWith("image/"))
-                    return (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        key={key}
-                        src={part.url}
-                        alt={part.filename ?? "attachment"}
-                        className="max-w-xs rounded-lg"
-                      />
-                    );
-                  if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
-                    const tp = part as {
-                      type: string;
-                      state: "input-streaming" | "input-available" | "output-available" | "output-error";
-                      input?: unknown;
-                      output?: unknown;
-                      errorText?: string;
-                    };
-                    return (
-                      <Tool key={key}>
-                        <ToolHeader type={tp.type as `tool-${string}`} state={tp.state} />
-                        <ToolContent>
-                          <ToolInput input={tp.input} />
-                          <ToolOutput output={tp.output} errorText={tp.errorText} />
-                        </ToolContent>
-                      </Tool>
-                    );
-                  }
-                  return null;
-                })}
+                {m.parts.map((part, i) => (
+                  <MessagePart key={`${m.id}-${i}`} part={part} />
+                ))}
               </MessageContent>
               {m.role === "assistant" && m.metadata != null && (
                 <MessageMetaBar

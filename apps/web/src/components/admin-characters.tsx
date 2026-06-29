@@ -51,8 +51,11 @@ export function AdminCharacters({ kind }: { kind: "persona" | "character" }) {
   const [search, setSearch] = useState("");
   const [model, setModel] = useState("");
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<CharItem | null>(null);
+  // the dialog and the row it's editing open/close together
+  const [dialog, setDialog] = useState<{ open: boolean; editing: CharItem | null }>({
+    open: false,
+    editing: null,
+  });
 
   // client-side filter + paginate (the global list is small)
   const all = (list.data ?? []) as CharItem[];
@@ -130,10 +133,7 @@ export function AdminCharacters({ kind }: { kind: "persona" | "character" }) {
               size="icon"
               variant="outline"
               aria-label="Edit"
-              onClick={() => {
-                setEditing(row.original);
-                setOpen(true);
-              }}
+              onClick={() => setDialog({ open: true, editing: row.original })}
             >
               <Pencil className="size-4" />
             </Button>
@@ -166,12 +166,7 @@ export function AdminCharacters({ kind }: { kind: "persona" | "character" }) {
               : "Global characters every user can chat with."}
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-        >
+        <Button onClick={() => setDialog({ open: true, editing: null })}>
           <Plus className="size-4" /> New {noun}
         </Button>
       </div>
@@ -179,9 +174,9 @@ export function AdminCharacters({ kind }: { kind: "persona" | "character" }) {
       <CharacterFormDialog
         kind={kind}
         models={models}
-        open={open}
-        onOpenChange={setOpen}
-        editing={editing}
+        open={dialog.open}
+        onOpenChange={(o) => setDialog((d) => ({ ...d, open: o }))}
+        editing={dialog.editing}
         onSave={onSave}
       />
 

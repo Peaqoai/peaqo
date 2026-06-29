@@ -511,21 +511,25 @@ export type PromptInputProps = Omit<
   ) => void | Promise<void>;
 };
 
-export const PromptInput = ({
-  className,
+// Encapsulates PromptInput's file/attachment state, drop targets, and the
+// effects that keep them in sync — lifted out so the component body stays small.
+function usePromptInputFiles({
   accept,
-  multiple,
-  globalDrop,
-  syncHiddenInput,
   maxFiles,
   maxFileSize,
   onError,
-  onSubmit,
-  children,
-  ...props
-}: PromptInputProps) => {
-  // Try to use a provider controller if present
-  const controller = useOptionalPromptInputController();
+  globalDrop,
+  syncHiddenInput,
+  controller,
+}: {
+  accept?: string;
+  maxFiles?: number;
+  maxFileSize?: number;
+  onError?: PromptInputProps["onError"];
+  globalDrop?: boolean;
+  syncHiddenInput?: boolean;
+  controller: PromptInputControllerProps | null;
+}) {
   const usingProvider = !!controller;
 
   // Refs
@@ -841,6 +845,44 @@ export const PromptInput = ({
     [referencedSources, clearReferencedSources]
   );
 
+  return { inputRef, formRef, files, clear, handleChange, attachmentsCtx, refsCtx };
+}
+
+export const PromptInput = ({
+  className,
+  accept,
+  multiple,
+  globalDrop,
+  syncHiddenInput,
+  maxFiles,
+  maxFileSize,
+  onError,
+  onSubmit,
+  children,
+  ...props
+}: PromptInputProps) => {
+  // Try to use a provider controller if present
+  const controller = useOptionalPromptInputController();
+  const usingProvider = !!controller;
+
+
+  const {
+    inputRef,
+    formRef,
+    files,
+    clear,
+    handleChange,
+    attachmentsCtx,
+    refsCtx,
+  } = usePromptInputFiles({
+    accept,
+    maxFiles,
+    maxFileSize,
+    onError,
+    globalDrop,
+    syncHiddenInput,
+    controller,
+  });
   const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
     async (event) => {
       event.preventDefault();

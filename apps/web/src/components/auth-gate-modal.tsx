@@ -21,15 +21,15 @@ export function AuthGateModal() {
   const setPending = useGate((s) => s.setPending);
 
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // one credentials object — the three fields always travel together
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit() {
     setBusy(true);
     setError(null);
+    const { name, email, password } = form;
     const res =
       mode === "login"
         ? await authClient.signIn.email({ email, password })
@@ -66,7 +66,11 @@ export function AuthGateModal() {
           {mode === "register" && (
             <div className="grid gap-2">
               <Label htmlFor="g-name">Name</Label>
-              <Input id="g-name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                id="g-name"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
             </div>
           )}
           <div className="grid gap-2">
@@ -74,8 +78,8 @@ export function AuthGateModal() {
             <Input
               id="g-email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             />
           </div>
           <div className="grid gap-2">
@@ -83,8 +87,8 @@ export function AuthGateModal() {
             <Input
               id="g-password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={form.password}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
             />
           </div>
           {error && <p className="text-destructive text-sm">{error}</p>}

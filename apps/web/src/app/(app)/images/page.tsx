@@ -74,10 +74,13 @@ const modelName = (id: string) => IMAGE_MODELS.find((m) => m.id === id)?.name ??
 const hueOf = (seed: string) => (seed.charCodeAt(0) * 7) % 360;
 
 export default function ImageStudio() {
-  const [model, setModel] = useState("flux-1-1-pro");
-  const [ar, setAr] = useState<AR>("1:1");
-  const [prompt, setPrompt] = useState("");
-  const [count, setCount] = useState(4);
+  // the generation form — these four fields feed generate() together
+  const [form, setForm] = useState<{ model: string; ar: AR; prompt: string; count: number }>({
+    model: "flux-1-1-pro",
+    ar: "1:1",
+    prompt: "",
+    count: 4,
+  });
   const [gens, setGens] = useState<Gen[]>(INITIAL);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [activeIter, setActiveIter] = useState(0);
@@ -86,14 +89,14 @@ export default function ImageStudio() {
 
   function generate() {
     const p =
-      prompt.trim() ||
+      form.prompt.trim() ||
       "A glass prism refracting light into a soft spectrum, studio still life";
     const id = "g" + Date.now();
     setGens((g) => [
-      { id, prompt: p, model, ar, iter: 1, seed: String(Math.floor(Math.random() * 99999)) },
+      { id, prompt: p, model: form.model, ar: form.ar, iter: 1, seed: String(Math.floor(Math.random() * 99999)) },
       ...g,
     ]);
-    setPrompt("");
+    setForm((f) => ({ ...f, prompt: "" }));
     setFocusId(id);
     setActiveIter(0);
   }
@@ -105,33 +108,33 @@ export default function ImageStudio() {
         <Field label="Prompt">
           <Textarea
             placeholder="Describe the image… include style, lens, lighting"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            value={form.prompt}
+            onChange={(e) => setForm((f) => ({ ...f, prompt: e.target.value }))}
             className="min-h-24 resize-y"
           />
         </Field>
         <Field label="Model">
           <Seg
             wrap
-            value={model}
-            onChange={setModel}
+            value={form.model}
+            onChange={(v) => setForm((f) => ({ ...f, model: v }))}
             options={IMAGE_MODELS.map((m) => ({ value: m.id, label: m.name, title: m.note }))}
           />
         </Field>
         <Field label="Aspect ratio">
           <Seg
-            value={ar}
-            onChange={setAr}
+            value={form.ar}
+            onChange={(v) => setForm((f) => ({ ...f, ar: v }))}
             options={AR_OPTIONS.map((a) => ({ value: a, label: a }))}
           />
         </Field>
-        <Field label={`Images per run · ${count}`}>
+        <Field label={`Images per run · ${form.count}`}>
           <input
             type="range"
             min={1}
             max={8}
-            value={count}
-            onChange={(e) => setCount(+e.target.value)}
+            value={form.count}
+            onChange={(e) => setForm((f) => ({ ...f, count: +e.target.value }))}
             style={{ accentColor: "var(--primary)" }}
           />
         </Field>

@@ -25,7 +25,6 @@
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@radix-ui/react-use-controllable-state": "^1.2.3",
-    "@shadcn/react": "^0.1.0",
     "@streamdown/cjk": "^1.0.3",
     "@streamdown/code": "^1.1.1",
     "@streamdown/math": "^1.0.2",
@@ -42,10 +41,8 @@
     "nanoid": "^5.1.16",
     "next-themes": "^0.4.6",
     "react": "^19.2.0",
-    "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.0",
     "react-resizable-panels": "^4.12.0",
-    "recharts": "3.8.0",
     "shadcn": "^4.12.0",
     "shiki": "^4.3.0",
     "sonner": "^2.0.7",

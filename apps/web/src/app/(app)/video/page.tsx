@@ -71,10 +71,13 @@ const arRatio = (a: string) => {
 const modelName = (id: string) => VIDEO_MODELS.find((m) => m.id === id)?.name ?? id;
 
 export default function VideoStudio() {
-  const [model, setModel] = useState("veo-3");
-  const [dur, setDur] = useState(8);
-  const [ar, setAr] = useState<AR>("16:9");
-  const [prompt, setPrompt] = useState("");
+  // the generation form — these four fields feed generate() together
+  const [form, setForm] = useState<{ model: string; dur: number; ar: AR; prompt: string }>({
+    model: "veo-3",
+    dur: 8,
+    ar: "16:9",
+    prompt: "",
+  });
   const [clips, setClips] = useState<Clip[]>(INITIAL);
   const [selId, setSelId] = useState<string>("v1");
 
@@ -82,14 +85,14 @@ export default function VideoStudio() {
 
   function generate() {
     const p =
-      prompt.trim() ||
+      form.prompt.trim() ||
       "Slow cinematic dolly through a neon-lit Tokyo alley in the rain";
     const id = "v" + Date.now();
     setClips((c) => [
-      { id, prompt: p, model, dur: dur + "s", ar, status: "rendering", progress: 0 },
+      { id, prompt: p, model: form.model, dur: form.dur + "s", ar: form.ar, status: "rendering", progress: 0 },
       ...c,
     ]);
-    setPrompt("");
+    setForm((f) => ({ ...f, prompt: "" }));
     setSelId(id);
     let pr = 0;
     const t = setInterval(() => {
@@ -113,33 +116,33 @@ export default function VideoStudio() {
         <Field label="Prompt">
           <Textarea
             placeholder="Describe the shot — motion, camera, mood…"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            value={form.prompt}
+            onChange={(e) => setForm((f) => ({ ...f, prompt: e.target.value }))}
             className="min-h-24 resize-y"
           />
         </Field>
         <Field label="Model">
           <Seg
             wrap
-            value={model}
-            onChange={setModel}
+            value={form.model}
+            onChange={(v) => setForm((f) => ({ ...f, model: v }))}
             options={VIDEO_MODELS.map((m) => ({ value: m.id, label: m.name, title: m.note }))}
           />
         </Field>
         <Field label="Aspect">
           <Seg
-            value={ar}
-            onChange={setAr}
+            value={form.ar}
+            onChange={(v) => setForm((f) => ({ ...f, ar: v }))}
             options={AR_OPTIONS.map((a) => ({ value: a, label: a }))}
           />
         </Field>
-        <Field label={`Duration · ${dur}s`}>
+        <Field label={`Duration · ${form.dur}s`}>
           <input
             type="range"
             min={2}
             max={12}
-            value={dur}
-            onChange={(e) => setDur(+e.target.value)}
+            value={form.dur}
+            onChange={(e) => setForm((f) => ({ ...f, dur: +e.target.value }))}
             style={{ accentColor: "var(--primary)" }}
           />
         </Field>
