@@ -21,6 +21,8 @@ import {
   type PersonaLike,
   type CharacterLike,
 } from "@peaqo/trpc/character-prompt";
+import { config } from "@peaqo/trpc/config";
+import { buildConsensusPrompt, CONSENSUS_SYSTEM } from "@peaqo/trpc/consensus-prompt";
 
 const app = new Hono().basePath("/api");
 
@@ -187,6 +189,65 @@ app.post("/chat", async (c) => {
         };
       }
     },
+  });
+});
+
+app.post("/consensus", async (c) => {
+  const session = await getSession(c.req.raw);
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  await connectDB();
+  const { userPrompt, answers } = (await c.req.json()) as {
+    userPrompt: string;
+    answers: { model: string; text: string }[];
+    conversationId?: string;
+  };
+
+  const user = await UserModel.findById(session.userId);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  if (shouldResetCredits(user.creditsResetAt)) {
+    user.creditsUsed = 0;
+    user.creditsResetAt = new Date();
+  }
+  if (!canAfford(user)) return c.json({ error: "Out of credits" }, 402);
+
+  const cfg = getModel(config.consensusModel);
+  if (!cfg) return c.json({ error: "Consensus model not configured" }, 400);
+  const gateway = getGateway(cfg.gatewayId);
+  if (!gateway) return c.json({ error: "Gateway not configured" }, 400);
+
+  let prompt: string;
+  try {
+    prompt = buildConsensusPrompt(userPrompt, answers ?? []);
+  } catch {
+    return c.json({ error: "Need at least 2 answers" }, 400);
+  }
+
+  const model = resolveModel({
+    provider: cfg.provider,
+    modelId: config.consensusModel,
+    gatewayUrl: gateway.url,
+  });
+  const multiplier = cfg.creditMultiplier ?? 1;
+  const minCredits = cfg.minCredits ?? 1;
+  const startedAt = Date.now();
+
+  const result = streamText({
+    model,
+    system: CONSENSUS_SYSTEM,
+    prompt,
+    onFinish: async ({ usage }) => {
+      const credits = creditsFor(usage.totalTokens ?? 0, multiplier, minCredits);
+      user.creditsUsed += credits;
+      await user.save();
+    },
+  });
+
+  return result.toUIMessageStreamResponse({
+    messageMetadata: ({ part }) =>
+      part.type === "finish"
+        ? { model: cfg.displayName, durationMs: Date.now() - startedAt }
+        : undefined,
   });
 });
 
