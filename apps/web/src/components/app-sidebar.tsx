@@ -15,7 +15,7 @@ import {
     Music as MusicIcon,
     Drama as DramaIcon,
     UserSquare as AvatarIcon,
-    PartyPopper as PartyIcon,
+    Rocket as RocketIcon,
     type LucideIcon,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -55,7 +55,7 @@ function sectionOf(pathname: string): Section {
   if (pathname.startsWith("/video")) return "video";
   if (pathname.startsWith("/music")) return "music";
   if (pathname.startsWith("/home")) return "home";
-  // /chat, /chat-history, /personas, /avatars, /fiesta are all "chat" modes
+  // /chat, /chat-history, /personas, /avatars, /super-ai are all "chat" modes
   return "chat";
 }
 
@@ -122,7 +122,7 @@ const CHAT_MODES: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Chats", href: "/chat", icon: MessageSquare },
   { label: "Persona", href: "/personas", icon: DramaIcon },
   { label: "Avatar", href: "/avatars", icon: AvatarIcon },
-  { label: "Fiesta", href: "/fiesta", icon: PartyIcon },
+  { label: "Super AI", href: "/super-ai", icon: RocketIcon },
 ];
 
 // "/chat" must not match /chat-history; the other modes match by prefix
