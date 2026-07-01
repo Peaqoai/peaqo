@@ -93,7 +93,7 @@ export function MultiChatView({ session }: { session: SuperSession }) {
       });
       if (!convId) {
         setConvId(res.id);
-        window.history.replaceState(null, "", `/super-ai?mode=multi-chat&id=${res.id}`);
+        window.history.replaceState(null, "", `/chat/multi/${res.id}`);
       }
       utils.conversation.list.invalidate();
     } catch {

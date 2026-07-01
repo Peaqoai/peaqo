@@ -89,7 +89,7 @@ export function SuperFiestaView({ session }: { session: SuperSession }) {
       });
       if (!convId) {
         setConvId(res.id);
-        window.history.replaceState(null, "", `/super-ai?id=${res.id}`);
+        window.history.replaceState(null, "", `/chat/super-ai/${res.id}`);
       }
       utils.conversation.list.invalidate();
     } catch {
