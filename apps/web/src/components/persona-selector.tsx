@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDownIcon, Drama } from "lucide-react";
+import { Check, ChevronDownIcon, Drama } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@peaqo/ui/components/dropdown-menu";
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@peaqo/ui/components/command";
 
 export type PersonaOption = { _id: string; name: string; emoji?: string };
 
@@ -25,9 +26,18 @@ export function PersonaSelector({
   const [open, setOpen] = useState(false);
   const selected = personas.find((p) => p._id === value);
 
+  const select = (id?: string) => {
+    onChange(id);
+    setOpen(false);
+  };
+
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger className="text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium">
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium"
+      >
         {selected?.emoji ? (
           <span className="text-base leading-none">{selected.emoji}</span>
         ) : (
@@ -35,24 +45,27 @@ export function PersonaSelector({
         )}
         <span className="max-w-[9rem] truncate">{selected?.name ?? "No persona"}</span>
         <ChevronDownIcon className="size-4 opacity-60" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-44">
-        <DropdownMenuRadioGroup
-          value={value ?? ""}
-          onValueChange={(v) => {
-            onChange(v || undefined);
-            setOpen(false);
-          }}
-        >
-          <DropdownMenuRadioItem value="">No persona</DropdownMenuRadioItem>
+      </button>
+      <CommandDialog open={open} onOpenChange={setOpen} title="Pick a persona">
+        <Command>
+          <CommandInput placeholder="Search personas…" />
+          <CommandList>
+          <CommandEmpty>No persona found.</CommandEmpty>
+          <CommandItem value="No persona" onSelect={() => select(undefined)}>
+            <Drama className="size-4 opacity-70" />
+            No persona
+            {!value && <Check className="ml-auto size-4" />}
+          </CommandItem>
           {personas.map((p) => (
-            <DropdownMenuRadioItem key={p._id} value={p._id}>
-              <span className="mr-1.5">{p.emoji || "🎭"}</span>
+            <CommandItem key={p._id} value={p.name} onSelect={() => select(p._id)}>
+              <span className="text-base leading-none">{p.emoji || "🎭"}</span>
               {p.name}
-            </DropdownMenuRadioItem>
+              {value === p._id && <Check className="ml-auto size-4" />}
+            </CommandItem>
           ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </CommandList>
+        </Command>
+      </CommandDialog>
+    </>
   );
 }
