@@ -4,7 +4,7 @@
 // the shared CharacterFormDialog. Driven by callbacks so each page wires its
 // own persona.* / character.* hooks.
 import { useState } from "react";
-import { Plus, Pencil, Trash2, MessageSquare } from "lucide-react";
+import { Pencil, Trash2, MessageSquare } from "lucide-react";
 import { Button } from "@peaqo/ui/components/button";
 import { Badge } from "@peaqo/ui/components/badge";
 import {
@@ -58,19 +58,9 @@ export function CharacterManager({
 
   return (
     <div>
-      <header className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-        >
-          <Plus className="size-4" /> New {noun}
-        </Button>
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
       </header>
 
       <CharacterFormDialog

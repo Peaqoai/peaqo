@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppSidebar, IconRail } from "@/components/app-sidebar";
 import { ChatHeaderTitle } from "@/components/chat-header-title";
 import { AuthGateModal } from "@/components/auth-gate-modal";
+import { LoginBanner } from "@/components/login-banner";
 import { TooltipProvider } from "@peaqo/ui/components/tooltip";
 import {
   SidebarInset,
@@ -18,9 +19,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (pathname.startsWith("/home")) {
     return (
       <TooltipProvider>
-        <div className="app-bg flex h-svh overflow-hidden">
-          <IconRail />
-          <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+        <div className="app-bg flex h-svh flex-col overflow-hidden">
+          <LoginBanner />
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <IconRail />
+            <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+          </div>
         </div>
         <AuthGateModal />
       </TooltipProvider>
@@ -32,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider style={{ "--sidebar-width": "19rem" } as React.CSSProperties}>
         <AppSidebar />
         <SidebarInset className="app-bg h-svh overflow-hidden">
+          <LoginBanner />
           <header className="border-border/60 flex h-12 shrink-0 items-center gap-2 border-b px-3">
             <SidebarTrigger />
             <Link

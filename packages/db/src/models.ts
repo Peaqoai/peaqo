@@ -48,6 +48,19 @@ const Message = new Schema(
   { _id: false, timestamps: true },
 );
 
+// One broadcast turn in a Super AI session: a single prompt fanned out to many
+// models, each answer stored, plus the optional merged consensus.
+const SuperTurn = new Schema(
+  {
+    prompt: { type: String, required: true },
+    answers: [
+      { _id: false, modelId: { type: String }, model: { type: String }, text: { type: String } },
+    ],
+    consensus: { type: String },
+  },
+  { _id: false, timestamps: true },
+);
+
 const Conversation = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -59,6 +72,11 @@ const Conversation = new Schema(
     // …or an in-character chat with a Character (the avatar you talk to)
     characterId: { type: Schema.Types.ObjectId, ref: "Character" },
     messages: [Message],
+    // Super AI sessions: mode marks the UI, superModels is the picked models /
+    // column layout, and turns holds the resumable multi-model history.
+    mode: { type: String, enum: ["chat", "super-fiesta", "multi-chat"], default: "chat" },
+    superModels: [{ _id: false, modelId: { type: String }, enabled: { type: Boolean, default: true } }],
+    turns: [SuperTurn],
   },
   { timestamps: true },
 );

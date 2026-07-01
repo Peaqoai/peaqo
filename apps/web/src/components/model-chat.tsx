@@ -1,15 +1,45 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { Switch } from "@peaqo/ui/components/switch";
 import { cn } from "@peaqo/ui/lib/utils";
 import { MessageResponse } from "@peaqo/ui/components/ai-elements/message";
 import { Shimmer } from "@peaqo/ui/components/ai-elements/shimmer";
 import { ChatModelSelector, type ChatModel } from "@/components/chat-model-selector";
+import { type PromptInputMessage } from "@peaqo/ui/components/ai-elements/prompt-input";
 
-export type SendSignal = { text: string; nonce: number } | null;
+export type SendSignal = {
+  text: string;
+  nonce: number;
+  files?: PromptInputMessage["files"];
+  webSearch?: boolean;
+  personaId?: string;
+} | null;
+
+// one broadcast turn of a Super AI session, as stored/reloaded
+export type SuperTurn = {
+  prompt: string;
+  answers: { modelId: string; model: string; text: string }[];
+  consensus?: string;
+};
+export type SuperSession = {
+  id: string;
+  models: { modelId: string; enabled: boolean }[];
+  turns: SuperTurn[];
+} | null;
+
+// rebuild a single model's chat thread from a session's turns (user prompt +
+// that model's answer per turn), for seeding useChat on reload
+export function turnsToMessages(turns: SuperTurn[], modelId: string): UIMessage[] {
+  const out: UIMessage[] = [];
+  turns.forEach((t, i) => {
+    out.push({ id: `u${i}`, role: "user", parts: [{ type: "text", text: t.prompt }] });
+    const a = t.answers.find((x) => x.modelId === modelId);
+    if (a) out.push({ id: `a${i}`, role: "assistant", parts: [{ type: "text", text: a.text }] });
+  });
+  return out;
+}
 
 // last assistant turn's concatenated text — what consensus consumes
 export function modelChatText(messages: UIMessage[]): string {
@@ -22,22 +52,25 @@ export function ModelChat({
   models,
   onModelChange,
   enabled = true,
-  onToggle,
   signal,
   onComplete,
   showHeader = true,
+  headerActions,
+  initialMessages,
 }: {
   modelId: string;
   models: ChatModel[];
   onModelChange?: (id: string) => void;
   enabled?: boolean;
-  onToggle?: () => void;
   signal: SendSignal;
   onComplete?: (modelId: string, text: string) => void;
   showHeader?: boolean;
+  headerActions?: ReactNode;
+  initialMessages?: UIMessage[];
 }) {
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
+    messages: initialMessages,
   });
 
   // fire one send per new signal nonce, only while enabled. Ref guards against
@@ -46,7 +79,10 @@ export function ModelChat({
   useEffect(() => {
     if (!signal || !enabled || signal.nonce === lastNonce.current) return;
     lastNonce.current = signal.nonce;
-    sendMessage({ text: signal.text }, { body: { modelId } });
+    sendMessage(
+      { text: signal.text, files: signal.files },
+      { body: { modelId, webSearch: signal.webSearch, personaId: signal.personaId } },
+    );
   }, [signal, enabled, modelId, sendMessage]);
 
   // report the finished answer up so the parent can build consensus
@@ -69,7 +105,7 @@ export function ModelChat({
             onChange={(id) => onModelChange?.(id)}
             models={models}
           />
-          {onToggle && <Switch checked={enabled} onCheckedChange={onToggle} />}
+          {headerActions && <div className="flex items-center gap-1">{headerActions}</div>}
         </div>
       )}
       <div

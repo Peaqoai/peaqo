@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
     Plus,
@@ -16,8 +16,12 @@ import {
     Drama as DramaIcon,
     UserSquare as AvatarIcon,
     Rocket as RocketIcon,
+    Columns3 as Columns3Icon,
+    Moon as MoonIcon,
+    Sun as SunIcon,
     type LucideIcon,
 } from "lucide-react";
+import { useTheme } from "@peaqo/ui/theme-provider";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
 import { UserMenu } from "@/components/user-menu";
@@ -89,7 +93,33 @@ export function IconRail() {
           <TooltipContent side="right">{s.label}</TooltipContent>
         </Tooltip>
       ))}
+      <ThemeToggle />
     </div>
+  );
+}
+
+// theme switch available to everyone, including logged-out users
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  const dark = theme === "dark";
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            aria-label="Toggle theme"
+            onClick={() => setTheme(dark ? "light" : "dark")}
+            className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground mt-auto grid size-9 place-items-center rounded-lg transition-colors"
+          >
+            {mounted && dark ? <SunIcon className="size-5" /> : <MoonIcon className="size-5" />}
+          </button>
+        }
+      />
+      <TooltipContent side="right">Toggle theme</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -118,11 +148,13 @@ function ContextPanel({ section }: { section: Section }) {
 }
 
 // ── Chat: real conversation list ──
-const CHAT_MODES: { label: string; href: string; icon: LucideIcon }[] = [
+// Super AI (= Super Fiesta) and Multi Chat both live at /super-ai, split by ?mode=
+const CHAT_MODES: { label: string; href: string; icon: LucideIcon; mode?: string }[] = [
   { label: "Chats", href: "/chat", icon: MessageSquare },
   { label: "Persona", href: "/personas", icon: DramaIcon },
   { label: "Avatar", href: "/avatars", icon: AvatarIcon },
-  { label: "Super AI", href: "/super-ai", icon: RocketIcon },
+  { label: "Super AI", href: "/super-ai", icon: RocketIcon, mode: "super-fiesta" },
+  { label: "Multi Chat", href: "/super-ai?mode=multi-chat", icon: Columns3Icon, mode: "multi-chat" },
 ];
 
 // "/chat" must not match /chat-history; the other modes match by prefix
@@ -131,14 +163,21 @@ const modeActive = (href: string, pathname: string) =>
     ? pathname === "/chat" || pathname.startsWith("/chat/")
     : pathname.startsWith(href);
 
-// avatar conversations live at /chat/avatar/<id>; everything else at /chat/<id>
-const chatHref = (c: { _id: unknown; characterId?: unknown }) =>
-  c.characterId ? `/chat/avatar/${c._id}` : `/chat/${c._id}`;
+// route by mode: Super AI sessions reopen in /super-ai; avatar chats at
+// /chat/avatar/<id>; everything else at /chat/<id>
+const chatHref = (c: { _id: unknown; characterId?: unknown; mode?: unknown }) => {
+  if (c.mode === "super-fiesta") return `/super-ai?id=${c._id}`;
+  if (c.mode === "multi-chat") return `/super-ai?mode=multi-chat&id=${c._id}`;
+  return c.characterId ? `/chat/avatar/${c._id}` : `/chat/${c._id}`;
+};
 
 function ChatPanel() {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // default Super AI sub-mode is super-fiesta when no ?mode= is set
+  const superMode = searchParams.get("mode") ?? "super-fiesta";
   const seg = Array.isArray(params.id) ? params.id : [];
   const activeId = seg[0] === "avatar" ? seg[1] : seg[0];
   const { data: session } = authClient.useSession();
@@ -174,7 +213,11 @@ function ChatPanel() {
               {CHAT_MODES.map((m) => (
                 <SidebarMenuItem key={m.href}>
                   <SidebarMenuButton
-                    isActive={modeActive(m.href, pathname)}
+                    isActive={
+                      m.mode
+                        ? pathname.startsWith("/super-ai") && superMode === m.mode
+                        : modeActive(m.href, pathname)
+                    }
                     tooltip={m.label}
                     render={<Link href={m.href} />}
                   >

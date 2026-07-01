@@ -1,7 +1,7 @@
 import { z } from "zod";
 import mongoose, { type Model } from "mongoose";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, adminProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure, adminProcedure } from "../trpc";
 import { connectDB, PersonaModel, CharacterModel } from "@peaqo/db";
 
 // Persona and Character are distinct collections with the same CRUD shape, so
@@ -24,14 +24,16 @@ export const characterShape = {
 };
 
 const oid = (id: string) => new mongoose.Types.ObjectId(id);
-const visibleTo = (userId: string) => ({ $or: [{ scope: "global" }, { ownerId: oid(userId) }] });
+// global docs are visible to everyone; signed-in users also see their own private docs
+const visibleTo = (userId: string | null) =>
+  userId ? { $or: [{ scope: "global" }, { ownerId: oid(userId) }] } : { scope: "global" };
 const clean = (v: unknown) => JSON.parse(JSON.stringify(v));
 
 // user-facing router: list global + own, CRUD on own private docs only
 function userRouter(Model: Model<any>, shape: z.ZodRawShape) {
   const input = z.object(shape);
   return router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: publicProcedure.query(async ({ ctx }) => {
       await connectDB();
       return clean(
         await Model.find(visibleTo(ctx.userId)).sort({ scope: 1, createdAt: -1 }).lean(),

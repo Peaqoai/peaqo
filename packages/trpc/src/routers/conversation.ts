@@ -10,7 +10,7 @@ export const conversationRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     await connectDB();
     return ConversationModel.find({ userId: ctx.userId })
-      .select("title modelId characterId updatedAt")
+      .select("title modelId characterId mode updatedAt")
       .sort({ updatedAt: -1 })
       .lean();
   }),
@@ -102,6 +102,69 @@ export const conversationRouter = router({
         title,
       });
       return { id: c.id as string };
+    }),
+
+  // Super AI (super-fiesta / multi-chat): append one broadcast turn, creating
+  // the conversation on the first turn. Returns the conversation id so the
+  // client can keep appending and reload the session later.
+  saveSuperTurn: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().optional(),
+        mode: z.enum(["super-fiesta", "multi-chat"]),
+        models: z.array(z.object({ modelId: z.string(), enabled: z.boolean().default(true) })).min(1),
+        title: z.string().max(120).optional(),
+        turn: z.object({
+          prompt: z.string(),
+          answers: z.array(
+            z.object({ modelId: z.string(), model: z.string(), text: z.string() }),
+          ),
+          consensus: z.string().optional(),
+        }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await connectDB();
+      if (input.id) {
+        const r = await ConversationModel.updateOne(
+          { _id: input.id, userId: ctx.userId },
+          { $push: { turns: input.turn }, $set: { superModels: input.models } },
+        );
+        if (r.matchedCount === 0) throw new TRPCError({ code: "NOT_FOUND" });
+        return { id: input.id };
+      }
+      const first = input.models[0]!.modelId;
+      const c = await ConversationModel.create({
+        userId: ctx.userId,
+        mode: input.mode,
+        modelId: first,
+        provider: getModel(first)?.provider ?? "openai",
+        title: (input.title || input.turn.prompt).slice(0, 120) || "Super AI",
+        superModels: input.models,
+        turns: [input.turn],
+      });
+      return { id: c.id as string };
+    }),
+
+  // patch the consensus onto the most recent Super AI turn (multi-chat generates
+  // it on demand, after the turn was already saved)
+  setSuperConsensus: protectedProcedure
+    .input(z.object({ id: z.string(), consensus: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await connectDB();
+      const conv = await ConversationModel.findOne({
+        _id: input.id,
+        userId: ctx.userId,
+      })
+        .select("turns")
+        .lean<{ turns?: unknown[] }>();
+      const n = conv?.turns?.length ?? 0;
+      if (n === 0) throw new TRPCError({ code: "NOT_FOUND" });
+      await ConversationModel.updateOne(
+        { _id: input.id, userId: ctx.userId },
+        { $set: { [`turns.${n - 1}.consensus`]: input.consensus } },
+      );
+      return { ok: true };
     }),
 
   // thumbs up/down on an assistant message, addressed by its array index.

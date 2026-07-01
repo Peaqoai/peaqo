@@ -1,66 +1,56 @@
 "use client";
 
-import { useState } from "react";
-import { Rocket as RocketIcon, Columns3 as Columns3Icon, ChevronDownIcon } from "lucide-react";
-import { cn } from "@peaqo/ui/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@peaqo/ui/components/dropdown-menu";
+import { useSearchParams } from "next/navigation";
+import { Rocket as RocketIcon, Columns3 as Columns3Icon } from "lucide-react";
+import { trpc } from "@/lib/trpc/client";
 import { SuperFiestaView } from "@/components/super-fiesta-view";
 import { MultiChatView } from "@/components/multi-chat-view";
+import type { SuperSession, SuperTurn } from "@/components/model-chat";
 
-type Mode = "super-fiesta" | "multi-chat";
-
-const MODES: { id: Mode; label: string; icon: typeof RocketIcon; blurb: string }[] = [
-  {
-    id: "super-fiesta",
-    label: "Super Fiesta",
-    icon: RocketIcon,
-    blurb: "One merged answer from many models",
-  },
-  {
-    id: "multi-chat",
-    label: "Multi Chat",
-    icon: Columns3Icon,
-    blurb: "Compare models side by side",
-  },
-];
-
+// mode is driven by the sidebar (?mode=super-fiesta | multi-chat); an optional
+// ?id= loads a saved, resumable session.
 export default function SuperAiPage() {
-  const [mode, setMode] = useState<Mode>("super-fiesta");
-  const current = MODES.find((m) => m.id === mode)!;
+  const params = useSearchParams();
+  const id = params.get("id") ?? undefined;
+  const saved = trpc.conversation.get.useQuery({ id: id! }, { enabled: !!id });
+
+  // when resuming, the stored doc dictates the mode; otherwise use the URL
+  const doc = id ? (saved.data as Record<string, unknown> | undefined) : undefined;
+  const mode =
+    (doc?.mode as string | undefined) ??
+    (params.get("mode") === "multi-chat" ? "multi-chat" : "super-fiesta");
+  const isMulti = mode === "multi-chat";
+
+  const session: SuperSession =
+    id && doc
+      ? {
+          id,
+          models: (doc.superModels as { modelId: string; enabled: boolean }[]) ?? [],
+          turns: (doc.turns as SuperTurn[]) ?? [],
+        }
+      : null;
+
+  if (id && saved.isLoading) {
+    return <div className="text-muted-foreground p-6 text-sm">Loading…</div>;
+  }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b px-4 py-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold">
-            <current.icon className="text-primary size-4" />
-            {current.label}
-            <ChevronDownIcon className="size-4 opacity-60" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
-            {MODES.map((m) => (
-              <DropdownMenuItem
-                key={m.id}
-                onClick={() => setMode(m.id)}
-                className={cn("flex items-start gap-2", m.id === mode && "bg-accent")}
-              >
-                <m.icon className="text-primary mt-0.5 size-4" />
-                <div>
-                  <div className="text-sm font-medium">{m.label}</div>
-                  <div className="text-muted-foreground text-xs">{m.blurb}</div>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="flex items-center gap-2 border-b px-4 py-3 text-sm font-semibold">
+        {isMulti ? (
+          <Columns3Icon className="text-primary size-4" />
+        ) : (
+          <RocketIcon className="text-primary size-4" />
+        )}
+        {isMulti ? "Multi Chat" : "Super AI"}
       </div>
       <div className="min-h-0 flex-1">
-        {mode === "super-fiesta" ? <SuperFiestaView /> : <MultiChatView />}
+        {/* key by session id so switching sessions remounts fresh state */}
+        {isMulti ? (
+          <MultiChatView key={id ?? "new"} session={session} />
+        ) : (
+          <SuperFiestaView key={id ?? "new"} session={session} />
+        )}
       </div>
     </div>
   );
